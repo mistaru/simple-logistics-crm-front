@@ -1,6 +1,6 @@
 <template>
   <div class="data-table__wrapper">
-    <v-data-table 
+    <v-data-table
       v-model:expanded="expandedArr"
       :model-value="modelValue"
       :headers="sortedColumns"
@@ -42,7 +42,7 @@
           name="top"
           v-bind="props"
         >
-          <v-toolbar 
+          <v-toolbar
             flat
             :height="toolbarHeight"
             color="whiteBlack"
@@ -198,7 +198,7 @@
   </div>
 </template>
 
-<script> 
+<script>
 import Search from '@/components/Search.vue';
 
 export default {
@@ -231,7 +231,7 @@ export default {
     showSearchBtn: { type: Boolean, default: false },
     searchOff: { type: Boolean, default: false },
     itemValue: { type: String, default: '' },
-    expandOnClick: { type: Boolean, default: false }, 
+    expandOnClick: { type: Boolean, default: false },
     toolbarHeight: { type: [String, Number], default: 'auto' },
     itemSelectable: { type: [String, Array, Function], default: null },
   },
@@ -246,6 +246,9 @@ export default {
     settings: [ { label: 'таблица', value: 'table' }, { label: 'карточки', value: 'cards' }],
   }),
   computed: {
+    $isMobile() {
+      return window.innerWidth < 768;
+    },
     elementsShown() {
       return this.itemsPerPage * this.page;
     },
@@ -260,7 +263,7 @@ export default {
             col.key = col.key ?? col.value;
             col.value = null;
           }
-          const cb = i => i[col.key] ?? col.default; 
+          const cb = i => i[col.key] ?? col.default;
           col.value = col.value || cb;
         }
         const idx = this.headers.findIndex(i => {
@@ -303,7 +306,7 @@ export default {
     }
     if (this.$isMobile) {
       this.settingValue = 'cards';
-    } 
+    }
   },
   methods: {
     expandItem(e) {

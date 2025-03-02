@@ -1,6 +1,5 @@
 <template>
   <v-container fluid>
-    <h3>Здесь будет CRUD для фур!</h3>
     <data-table
       :headers="headers"
       :items="data"
@@ -44,7 +43,7 @@
           <confirm-dialog
             ref="deleteDialog"
             v-model="deleteDialogIsOpen"
-            @handleOk="deleteItem(item)"
+            @handle-ok="deleteItem(item)"
           />
         </div>
       </template>
@@ -163,6 +162,8 @@ export default {
     rules: Rules,
     loading: false,
     valid: false,
+    isHidden: false,
+    $isMobile: false,
     data: [],
     headers: [
       { title: 'ID', key: 'id' },
@@ -172,6 +173,7 @@ export default {
       { title: 'Слад доставки', key: 'deliveryWarehouse' },
       { title: 'Телефон водителя', key: 'driverPhone' },
       { title: 'Доп. информация', key: 'additionalInformation' },
+      { title: 'Действие', key: 'actions', sortable: false, align: 'start' },
     ],
     formData: {},
     dialog: false,
@@ -194,43 +196,61 @@ export default {
       this.dialog = true;
     },
 
-    // deleteItem(item) {
-    //   this.$http.delete(`/partner/configuration/delete?id=${item.id}`)
-    //     .then(r => {
-    //       if (r.data.result == null) {
-    //         this.addErrorMessages(r.data.details);
-    //       } else {
-    //         this.addSuccessMessages('Успешно удалено');
-    //         this.getAll();
-    //       }
-    //       this.$refs.deleteDialog.close();
-    //     });
-    // },
+    deleteItem(item) {
+      this.$http
+        .delete(`/truck/${item.id}`)
+        .then(r => {
+          if (r.status === 204) {
+            this.addSuccessMessages('Успешно удалено');
+            this.initialize();
+          } else {
+            this.addErrorMessages('Ошибка при удалении');
+          }
+          this.$refs.deleteDialog.close();
+        });
+    },
     cancel() {
       this.dialog = false;
       this.formData = {};
       this.getAll();
     },
     save() {
-      const model = {
+      const method = this.formData.id ? 'put' : 'post';
+      const url = '/truck';
+      const truckModel = {
         id: this.formData.id,
-        truckModel: this.formData?.truckModel,
+        registrationCountry: this.formData.registrationCountry,
+        volumeM3: this.formData.volumeM3,
+        departureWarehouse: this.formData.departureWarehouse,
+        deliveryWarehouse: this.formData.deliveryWarehouse,
+        driverPhone: this.formData.driverPhone,
+        additionalInformation: this.formData.additionalInformation,
       };
-      this.$http.post('/truck', model)
+      this.$http[method](url, truckModel)
         .then(r => {
-          if (r.data.result == null) {
-            this.addErrorMessages(r.data.details);
+          if (r.data == null) {
+            this.addErrorMessages(this.formData.id ? 'Ошибка при обновлении' : 'Ошибка при добавлении');
           } else {
             this.addSuccessMessages(this.formData.id ? 'Успешно обновлено' : 'Успешно добавлено');
           }
           this.dialog = false;
-          this.formData = {};
-          this.getAll();
+          this.formData = {
+            id: null,
+            registrationCountry: '',
+            volumeM3: null,
+            departureWarehouse: '',
+            deliveryWarehouse: '',
+            driverPhone: '',
+            additionalInformation: '',
+          };
+          this.initialize();
         });
     },
 
     initialize() {
-      this.$http.get('/truck')
+      this.loading = true;
+      this.$http
+        .get('/truck')
         .then(response => {
           this.data = response.data;
         },
@@ -238,38 +258,6 @@ export default {
         .finally(() => {
           this.loading = false;
         });
-
-    //   this.$http.get('/dict/creditProductType')
-    //     .then(response => {
-    //         this.creditProductType = response.data;
-    //       },
-    //       e => this.setGlobalErrorMessage(e))
-    //     .finally(() => {
-    //       this.loading = false;
-    //     });
-    //
-    //   this.$http.get('/partner')
-    //     .then(response => {
-    //         this.partners = response.data.result;
-    //       },
-    //       e => this.setGlobalErrorMessage(e))
-    //     .finally(() => {
-    //       this.loading = false;
-    //     });
-    // },
-    // getAll() {
-    //   this.loading = true;
-    //   this.$http.get('/partner/configuration')
-    //     .then(r => {
-    //         if (r.data.result == null) {
-    //           this.addErrorMessages(r.data.details);
-    //         } else {
-    //           this.data = r.data.result;
-    //         }},
-    //       e => this.setGlobalErrorMessage(e))
-    //     .finally(() => {
-    //       this.loading = false;
-    //     });
     },
   },
 
