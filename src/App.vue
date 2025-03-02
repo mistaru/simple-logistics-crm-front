@@ -14,6 +14,9 @@ const token = ref<string | null>(sessionStorage.getItem('token') || '');
 const links = [
   { title: 'Главная', path: '/Home', icon: 'mdi-home' },
   { title: 'Роли', path: '/Role', icon: 'mdi-account-details' },
+  { title: 'Склады', path: '/Warehouse', icon: 'mdi-cube' },
+  { title: 'Клиенты', path: '/Client', icon: 'mdi-account-multiple' },
+  { title: 'Справочники', path: '/Dictionary', icon: 'mdi-routes' },
 ];
 
 const logout = () => {
