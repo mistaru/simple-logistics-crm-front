@@ -65,6 +65,30 @@ export default [
       import('../views/Home.vue'),
   },
   {
+    path: '/client',
+    meta: { breadcrumb: true },
+    name: 'Client',
+    component: () =>
+      import(
+        '../pages/Client.vue'),
+  },
+  {
+    path: '/warehouse',
+    meta: { breadcrumb: true },
+    name: 'Warehouse',
+    component: () =>
+      import(
+        '../pages/Warehouse.vue'),
+  },
+  {
+    path: '/dictionary',
+    meta: { breadcrumb: true },
+    name: 'Dictionary',
+    component: () =>
+      import(
+        '../pages/Dictionary.vue'),
+  },
+  {
     path: '/truck',
     meta: { breadcrumb: true },
     name: 'Truck',
