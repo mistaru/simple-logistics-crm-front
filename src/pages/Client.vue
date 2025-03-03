@@ -231,6 +231,9 @@ export default {
             additionalInfo: '',
           };
           this.initialize();
+        }).catch(error => {
+          console.error('Ошибка при сохранении:', error);
+          this.addErrorMessages('Ошибка при сохранении данных');
         });
     },
 
