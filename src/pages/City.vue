@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <h3>Здесь будет CRUD для клиентов!</h3>
+    <h3>Здесь будет CRUD для городов!</h3>
     <data-table
       :headers="headers"
       :items="data"
@@ -74,36 +74,27 @@
             <v-row>
               <v-col cols="12">
                 <v-text-field
-                  v-model="formData.fullName"
-                  label="ФИО клиента"
+                  v-model="formData.name"
+                  label="Название"
                   :rules="[rules.required]"
                 />
               </v-col>
               <v-col cols="12">
-                <v-text-field
-                  v-model="formData.phoneNumber"
-                  label="Телефон клиента"
+                <v-select
+                  v-model="formData.country"
+                  :items="countries"
+                  item-text="name"
+                  item-value="id"
+                  label="Страна"
                   :rules="[rules.required]"
+                  return-object
                 />
               </v-col>
               <v-col cols="12">
                 <v-text-field
-                  v-model="formData.whatsappNumber"
-                  label="Whatsapp клиента"
+                  v-model="formData.description"
+                  label="Описание"
                   :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.email"
-                  label="Email клиента"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.additionalInfo"
-                  label="Доп. информация"
                 />
               </v-col>
             </v-row>
@@ -146,9 +137,10 @@ import { mapActions, mapState } from 'pinia';
 import { useStore } from '@/store/store.js';
 import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Hint from '@/components/Hint.vue';
+import country from '@/pages/Country.vue';
 
 export default {
-  name: 'Client',
+  name: 'City',
   components: { Hint, ConfirmDialog },
   data: () => ({
     deleteDialogIsOpen: false,
@@ -158,12 +150,11 @@ export default {
     data: [],
     headers: [
       { title: 'ID', key: 'id' },
-      { title: 'ФИО', key: 'fullName' },
-      { title: 'Телефон', key: 'phoneNumber' },
-      { title: 'Whatsapp', key: 'whatsappNumber' },
-      { title: 'Email', key: 'email' },
-      { title: 'Доп. информация', key: 'additionalInfo' },
+      { title: 'Название', key: 'name' },
+      { title: 'Описание', key: 'description' },
+      { title: 'Страна', key: 'country' },
     ],
+    countries: [],
     formData: {},
     dialog: false,
     confirmDialog: null,
@@ -176,6 +167,7 @@ export default {
   },
   created() {
     this.initialize();
+    this.fetchCountries();
     // this.getAll();
   },
   methods: {
@@ -188,7 +180,7 @@ export default {
 
     deleteItem(item) {
       this.$http
-        .delete(`/client/${item.id}`)
+        .delete(`/city/${item.id}`)
         .then(r => {
           if (r.status === 204) {
             this.addSuccessMessages('Успешно удалено');
@@ -206,14 +198,12 @@ export default {
     },
     save() {
       const method = this.formData.id ? 'put' : 'post';
-      const url = '/client';
+      const url = '/city';
       const model = {
         id: this.formData.id,
-        fullName: this.formData.fullName,
-        phoneNumber: this.formData.phoneNumber,
-        whatsappNumber: this.formData.whatsappNumber,
-        email: this.formData.email,
-        additionalInfo: this.formData.additionalInfo,
+        name: this.formData.name,
+        description: this.formData.description,
+        country: this.formData.country,
       };
       this.$http[method](url, model)
         .then(r => {
@@ -225,29 +215,40 @@ export default {
           this.dialog = false;
           this.formData = {
             id: null,
-            fullName: '',
-            phoneNumber: null,
-            whatsappNumber: '',
-            email: '',
-            additionalInfo: '',
+            name: '',
+            description: '',
+            country: '',
           };
           this.initialize();
         }).catch(error => {
-          console.error('Ошибка при сохранении:', error);
-          this.addErrorMessages('Ошибка при сохранении данных');
-        });
+        console.error('Ошибка при сохранении:', error);
+        this.addErrorMessages('Ошибка при сохранении данных');
+      });
     },
 
     initialize() {
       this.loading = true;
       this.$http
-        .get('/client')
+        .get('/city')
         .then(response => {
-          this.data = response.data.content;
-        },
-        e => this.setGlobalErrorMessage(e))
+            this.data = response.data.content;
+          },
+          e => this.setGlobalErrorMessage(e))
         .finally(() => {
           this.loading = false;
+        });
+    },
+
+    fetchCountries() {
+      this.$http.get('/country/all')
+        .then(response => {
+          this.countries = response.data.map(country => ({
+            id: country.id,
+            name: country.name,
+          }));
+        })
+        .catch(error => {
+          console.error('Ошибка при загрузке стран:', error);
         });
     },
   },

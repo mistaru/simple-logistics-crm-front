@@ -17,6 +17,8 @@ const links = [
   { title: 'Склады', path: '/Warehouse', icon: 'mdi-cube' },
   { title: 'Клиенты', path: '/Client', icon: 'mdi-account-multiple' },
   { title: 'Справочники', path: '/Dictionary', icon: 'mdi-routes' },
+  { title: 'Страны', path: '/Country', icon: 'mdi-routes' },
+  { title: 'Города', path: '/City', icon: 'mdi-routes' },
   { title: 'Фуры', path: '/Truck', icon: 'mdi-truck-outline' },
 ];
 

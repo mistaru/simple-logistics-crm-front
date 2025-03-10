@@ -1,9 +1,5 @@
-<script setup lang="ts">
-
-</script>
-
 <template>
-  <v-container>
+  <v-container fluid>
     <h3>Здесь будет CRUD для справочников!</h3>
   </v-container>
 </template>

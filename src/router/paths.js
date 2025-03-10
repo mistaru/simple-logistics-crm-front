@@ -81,12 +81,20 @@ export default [
         '../pages/Warehouse.vue'),
   },
   {
-    path: '/dictionary',
+    path: '/country',
     meta: { breadcrumb: true },
-    name: 'Dictionary',
+    name: 'Country',
     component: () =>
       import(
-        '../pages/Dictionary.vue'),
+        '../pages/Country.vue'),
+  },
+  {
+    path: '/city',
+    meta: { breadcrumb: true },
+    name: 'City',
+    component: () =>
+      import(
+        '../pages/City.vue'),
   },
   {
     path: '/truck',

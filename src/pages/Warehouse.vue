@@ -83,17 +83,17 @@
                 <v-checkbox
                   v-model="formData.isLocal"
                   label="Местная"
-                  :rules="[rules.required]"
                 />
               </v-col>
               <v-col cols="12">
                 <v-select
                   v-model="formData.city"
                   :items="cities"
-                  item-text="name"
+                  item-text="object.name"
                   item-value="id"
                   label="Город"
                   :rules="[rules.required]"
+                  return-object
                 />
               </v-col>
               <v-col cols="12">
@@ -106,7 +106,7 @@
               <v-col cols="12">
                 <v-text-field
                   v-model="formData.phoneNumber"
-                  label="Телефон клиента"
+                  label="Телефон склада"
                   :rules="[rules.required]"
                 />
               </v-col>
@@ -181,6 +181,7 @@ export default {
     formData: {},
     dialog: false,
     confirmDialog: null,
+    isHidden: false,
     creditProductType: [],
     partners: [],
   }),
@@ -223,7 +224,7 @@ export default {
       const url = '/warehouse';
       const model = {
         id: this.formData.id,
-        name: this.formData.fullName,
+        name: this.formData.name,
         isLocal: this.formData.isLocal,
         city: this.formData.city,
         address: this.formData.address,
@@ -270,6 +271,7 @@ export default {
     fetchCities() {
       this.$http.get('/city/all')
         .then(response => {
+          console.log('response.data:', response.data);
           this.cities = response.data;
         })
         .catch(error => {

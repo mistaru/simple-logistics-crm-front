@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <h3>Здесь будет CRUD для клиентов!</h3>
+    <h3>Здесь будет CRUD для стран!</h3>
     <data-table
       :headers="headers"
       :items="data"
@@ -74,36 +74,16 @@
             <v-row>
               <v-col cols="12">
                 <v-text-field
-                  v-model="formData.fullName"
-                  label="ФИО клиента"
+                  v-model="formData.name"
+                  label="Название"
                   :rules="[rules.required]"
                 />
               </v-col>
               <v-col cols="12">
                 <v-text-field
-                  v-model="formData.phoneNumber"
-                  label="Телефон клиента"
+                  v-model="formData.description"
+                  label="Описание"
                   :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.whatsappNumber"
-                  label="Whatsapp клиента"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.email"
-                  label="Email клиента"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.additionalInfo"
-                  label="Доп. информация"
                 />
               </v-col>
             </v-row>
@@ -148,7 +128,7 @@ import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Hint from '@/components/Hint.vue';
 
 export default {
-  name: 'Client',
+  name: 'Country',
   components: { Hint, ConfirmDialog },
   data: () => ({
     deleteDialogIsOpen: false,
@@ -158,11 +138,8 @@ export default {
     data: [],
     headers: [
       { title: 'ID', key: 'id' },
-      { title: 'ФИО', key: 'fullName' },
-      { title: 'Телефон', key: 'phoneNumber' },
-      { title: 'Whatsapp', key: 'whatsappNumber' },
-      { title: 'Email', key: 'email' },
-      { title: 'Доп. информация', key: 'additionalInfo' },
+      { title: 'Название', key: 'name' },
+      { title: 'Описание', key: 'description' },
     ],
     formData: {},
     dialog: false,
@@ -176,7 +153,6 @@ export default {
   },
   created() {
     this.initialize();
-    // this.getAll();
   },
   methods: {
     ...mapActions(useStore,['addSuccessMessages', 'addErrorMessages']),
@@ -188,7 +164,7 @@ export default {
 
     deleteItem(item) {
       this.$http
-        .delete(`/client/${item.id}`)
+        .delete(`/country/${item.id}`)
         .then(r => {
           if (r.status === 204) {
             this.addSuccessMessages('Успешно удалено');
@@ -206,14 +182,11 @@ export default {
     },
     save() {
       const method = this.formData.id ? 'put' : 'post';
-      const url = '/client';
+      const url = '/country';
       const model = {
         id: this.formData.id,
-        fullName: this.formData.fullName,
-        phoneNumber: this.formData.phoneNumber,
-        whatsappNumber: this.formData.whatsappNumber,
-        email: this.formData.email,
-        additionalInfo: this.formData.additionalInfo,
+        name: this.formData.name,
+        description: this.formData.description,
       };
       this.$http[method](url, model)
         .then(r => {
@@ -225,31 +198,29 @@ export default {
           this.dialog = false;
           this.formData = {
             id: null,
-            fullName: '',
-            phoneNumber: null,
-            whatsappNumber: '',
-            email: '',
-            additionalInfo: '',
+            name: '',
+            description: '',
           };
           this.initialize();
         }).catch(error => {
-          console.error('Ошибка при сохранении:', error);
-          this.addErrorMessages('Ошибка при сохранении данных');
-        });
+        console.error('Ошибка при сохранении:', error);
+        this.addErrorMessages('Ошибка при сохранении данных');
+      });
     },
 
     initialize() {
       this.loading = true;
       this.$http
-        .get('/client')
+        .get('/country')
         .then(response => {
-          this.data = response.data.content;
-        },
-        e => this.setGlobalErrorMessage(e))
+            this.data = response.data.content;
+          },
+          e => this.setGlobalErrorMessage(e))
         .finally(() => {
           this.loading = false;
         });
     },
+
   },
 
 };
