@@ -1,15 +1,19 @@
-import { registerPlugins } from './plugins';
-import App from './App.vue';
 import { createApp } from 'vue';
-import { createVuetify } from 'vuetify';
+import 'vuetify/styles';
+
+import App from './App.vue';
+import vuetify from '@/plugins/vuetify';
+import router from './router';
+import { createPinia } from 'pinia';
 import { useAppStore } from './stores/app';
-import http from './axios';
-createVuetify();
+
 const app = createApp(App);
+const pinia = createPinia();
 
-registerPlugins(app);
-const store = useAppStore();
-app.config.globalProperties.$http = http;
-store.setHttp(http);
+app.use(pinia);
+app.use(vuetify);
+app.use(router);
 
-app.mount('#app');
+router.isReady().then(() => {
+  app.mount('#app');
+});
