@@ -20,6 +20,8 @@ const links = [
   { title: 'Страны', path: '/Country', icon: 'mdi-routes' },
   { title: 'Города', path: '/City', icon: 'mdi-routes' },
   { title: 'Фуры', path: '/Truck', icon: 'mdi-truck-outline' },
+  { title: 'Грузы', path: '/Cargo', icon: 'mdi-drawing-box' }
+  ,
 ];
 
 const logout = () => {

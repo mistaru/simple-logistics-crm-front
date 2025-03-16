@@ -104,4 +104,12 @@ export default [
       import(
         '../pages/Truck.vue'),
   },
+  {
+    path: '/cargo',
+    meta: { breadcrumb: true },
+    name: 'Truck',
+    component: () =>
+      import(
+        '../pages/Cargo.vue'),
+  },
 ];
