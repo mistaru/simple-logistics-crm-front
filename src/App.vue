@@ -20,6 +20,7 @@ const links = [
   { title: 'Страны', path: '/Country', icon: 'mdi-routes' },
   { title: 'Города', path: '/City', icon: 'mdi-routes' },
   { title: 'Фуры', path: '/Truck', icon: 'mdi-truck-outline' },
+  { title: 'Платежи', path: '/Payment', icon: 'mdi-cash-multiple' },
 ];
 
 const logout = () => {
