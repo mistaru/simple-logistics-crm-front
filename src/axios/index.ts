@@ -1,30 +1,44 @@
 import axios from 'axios';
-import { useAppStore } from '@/stores/app.ts';
-import router from '../router/';
+import { useAppStore } from '@/stores/app';
+import router from '../router/index';
+const origin = window.location.origin;
+const dnsMapper:Record<string, string> = {
+  'localhost': 'http://localhost:8081/api',
+  'test': 'http://localhost:8081/api',
+  'https://logistic.kg': 'https://logistic.kg/api/',
+};
+const getBaseUrl = () => {
+  const matchedKey = Object.keys(dnsMapper).find(key => origin.includes(key));
+  return matchedKey ? dnsMapper[matchedKey] : dnsMapper.test;
+};
 
-const http = axios.create({
-  baseURL:
-    process.env.NODE_ENV === 'production'
-      ? '/api'
-      : 'http://localhost:8081/api',
+const axiosIns = axios.create({
+  baseURL: getBaseUrl(),
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   },
   timeout: 180000,
 });
-const token = sessionStorage.getItem('token');
-if (token) {
-  http.defaults.headers.common['Authorization'] = 'Bearer ' + token;
-}
 
-http.interceptors.response.use(
+axiosIns.interceptors.request.use(config => {
+  const token = sessionStorage.getItem('token');
+  if (token) {
+    config.headers['Authorization'] = 'Bearer ' + token;
+  }
+
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+axiosIns.interceptors.response.use(
   response => {
     return response;
   },
   err => {
     return new Promise((_, reject) => {
-      if (err?.response?.status === 401) {
+      if ([401, 403].includes(err?.response?.status)) {
         const store = useAppStore();
         store.logout();
         router.push('/login');
@@ -35,4 +49,4 @@ http.interceptors.response.use(
   }
 );
 
-export default http;
+export default axiosIns;

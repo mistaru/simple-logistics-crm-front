@@ -14,8 +14,8 @@
   </div>
 </template>
 
-<script setup>
-import { useNotificationStore } from '../../stores/notifications.ts';
+<script setup lang="ts">
+import { useNotificationStore } from '@/stores/notifications';
 
 const { notifications, removeNotification } = useNotificationStore();
 </script>
