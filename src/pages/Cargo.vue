@@ -188,15 +188,16 @@ export default {
   methods: {
     ...mapActions(useStore, ['addSuccessMessages', 'addErrorMessages']),
 
-    loadStatuses() {
-      this.$http.get('/enums/cargoStatuses').then(response => {
+    async loadStatuses() {
+      try {
+        const response = await this.$http.get('/enums/cargoStatuses');
         this.statuses = response.data.map(status => ({
           value: status.value,
-          description: status.description
+          description: status.description,
         }));
-      }).catch(() => {
+      } catch (error) {
         this.addErrorMessages('Ошибка загрузки статусов');
-      });
+      }
     },
 
     editedItem(item) {
@@ -204,11 +205,14 @@ export default {
       this.dialog = true;
     },
 
-    deleteItem(item) {
-      this.$http.delete(`/cargo/${item.id}`).then(() => {
+    async deleteItem(item) {
+      try {
+        await this.$http.delete(`/cargo/${item.id}`);
         this.addSuccessMessages('Успешно удалено');
         this.initialize();
-      }).catch(() => this.addErrorMessages('Ошибка при удалении'));
+      } catch (error) {
+        this.addErrorMessages('Ошибка при удалении');
+      }
     },
 
     cancel() {
@@ -219,9 +223,10 @@ export default {
 
     formatDateTime(value) {
       if (!value) return null;
-      return new Date(value).toISOString(); // Форматирует дату в ISO 8601
+      return new Date(value).toISOString();
     },
-    save() {
+
+    async save() {
       const payload = {
         ...this.formData,
         warehouseArrivalDate: this.formatDateTime(this.formData.warehouseArrivalDate),
@@ -229,22 +234,24 @@ export default {
       };
 
       const method = this.formData.id ? 'put' : 'post';
-      this.$http[method]('/cargo', payload)
-        .then(() => {
-          this.addSuccessMessages(this.formData.id ? 'Успешно обновлено' : 'Успешно добавлено');
-          this.dialog = false;
-          this.initialize();
-        })
-        .catch(() => this.addErrorMessages('Ошибка при сохранении'));
+      try {
+        await this.$http[method]('/cargo', payload);
+        this.addSuccessMessages(this.formData.id ? 'Успешно обновлено' : 'Успешно добавлено');
+        this.dialog = false;
+        this.initialize();
+      } catch (error) {
+        this.addErrorMessages('Ошибка при сохранении');
+      }
     },
 
-    initialize() {
+    async initialize() {
       this.loading = true;
-      this.$http.get('/cargo').then(response => {
+      try {
+        const response = await this.$http.get('/cargo');
         this.data = response.data;
-      }).finally(() => {
+      } finally {
         this.loading = false;
-      });
+      }
     },
   },
 };

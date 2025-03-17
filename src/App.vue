@@ -14,7 +14,7 @@ const token = ref<string | null>(sessionStorage.getItem('token') || '');
 const { menuList } = storeToRefs(store);
 
 interface Permission {
-  title: string 
+  title: string
   icon: string
   path?: string
   value?: string
@@ -24,12 +24,13 @@ const links = computed(() => {
   return menuList.value
     .map(menu => {
       const isAdmin = menu?.screen?.value === 'ADMINISTRATION';
+      const isDictScreen = menu?.screen?.value === 'DICT_SCREEN';  // Проверка для DICT_SCREEN
       const children = menu.permissions
         .map((permission) => ({
           title: permission.description,
           path: `/${permission.view}`,
           icon: permission.icon ?? 'mdi-credit-card-multiple',
-        } as Permission));        
+        } as Permission));
 
       if (children.length === 1) {
         return {
@@ -40,18 +41,28 @@ const links = computed(() => {
       }
 
       if (children.length > 0) {
-        return isAdmin ?  {
-          title: menu.screen.description,
-          icon: menu.screen.icon || 'mdi-view-dashboard',
-          value: menu.screen.value,
-          children,
-        } : children;
+        if (isAdmin) {
+          return {
+            title: menu.screen.description,
+            icon: menu.screen.icon || 'mdi-view-dashboard',
+            value: menu.screen.value,
+            children,
+          };
+        } else if (isDictScreen) {
+          return {
+            title: menu.screen.description,
+            icon: menu.screen.icon || 'mdi-folder',
+            value: menu.screen.value,
+            children,
+          };
+        } else {
+          return children;
+        }
       }
 
       return null;
     }).flat()
     .filter(Boolean);
- 
 });
 
 const logout = () => {
