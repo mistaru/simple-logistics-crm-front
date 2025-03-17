@@ -119,10 +119,9 @@ export const useAppStore = defineStore('app', {
       try {
         this.auth_request();
 
-        const [data, error] = await fetchData('/public/auth/login', {
+        const [data] = await fetchData('/public/auth/login', {
           method: 'POST',
           body: JSON.stringify(user) as unknown as Record<string, never>,
-          errMessage: 'Ошибка! Обратитесь к администратору.',
         });
         if (data) {
           sessionStorage.setItem('token', data);
@@ -160,6 +159,7 @@ export const useAppStore = defineStore('app', {
         const decodedValue = JSON.parse(window.atob(data.split('.')[1]));
         await this.init();
         this.set_expired_date(decodedValue.exp * 1000);
+
         return data;
       } catch (error) {
         this.auth_error();
@@ -168,6 +168,7 @@ export const useAppStore = defineStore('app', {
       }
     },
     async activateRole(roleId: string) {
+
       const [, error] = await fetchData(ACTIVATE_ROLE, { params: { roleId } });
       return !error;
     },

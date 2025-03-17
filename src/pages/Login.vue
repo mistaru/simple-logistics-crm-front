@@ -70,6 +70,7 @@ const isDisabledBtn = computed(() => !username.value || !password.value);
               label="Логин"
               placeholder="Введите логин"
               prepend-icon="mdi-account"
+              autocomplete="username"
               type="text"
               class="mb-4"
               required
@@ -83,6 +84,7 @@ const isDisabledBtn = computed(() => !username.value || !password.value);
               prepend-icon="mdi-lock"
               type="password"
               required
+              autocomplete="current-password"
             />
 
             <v-btn

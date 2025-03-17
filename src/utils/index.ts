@@ -90,7 +90,7 @@ export const  fetchData = async(url:string, options:fetchOptions={}) => {
     });
 
     if (data?.resultCode?.httpCode && data?.resultCode?.httpCode !== 200) {
-      throw data?.result;
+      throw data?.details || data?.result?.details;
     }
 
     return [data?.result ?? data, null];

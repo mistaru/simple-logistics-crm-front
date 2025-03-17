@@ -19,9 +19,9 @@ fetchPermissions();
 
 <template>
   <v-container>
-    <h2 class="mb-4">
-      Доступы
-    </h2>
+    <h3 class="mb-4">
+      Список доступов
+    </h3>
     <v-data-table
       :headers="headers"
       :items="usersStore.permissions"

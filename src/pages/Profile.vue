@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import ModalDialog from '@/components/UserModal.vue';
 import { useUsersStore } from '@/stores/permissions';
+import type { Role } from '@/stores/types';
 import Rules from '@/utils/rules';
 import { storeToRefs } from 'pinia';
 
@@ -18,10 +19,11 @@ const passwordInfo = ref({
 const showCurrentPassword = ref(false);
 const showNewPassword = ref(false);
 const showRepeatPassword = ref(false);
-const role = ref('');
+const role = ref<Role | string>('');
 
 const activateRole = () => {
-  store.activateRole(role.value);
+  const id = typeof role.value === 'object' ? `${role.value?.id}` : role.value;
+  store.activateRole(id);
 };
 
 const openModal = () => {
@@ -50,10 +52,11 @@ const updatePassword = () => {
 onMounted(() => {
   user.value?.roles?.some(i => {
     if (i.active) {
-      role.value = `${i.id}`;
+      role.value = i;
+      return true;
     }
   });
-}); 
+});
 </script>
 
 <template>
@@ -71,6 +74,7 @@ onMounted(() => {
       >
         Обновить пароль
       </v-btn>
+
       <v-select
         v-model="role"
         :items="user.roles"
@@ -79,7 +83,7 @@ onMounted(() => {
         variant="outlined"
         class="profile-roles"
         label="Текущая роль"
-        density="compact" 
+        density="compact"
         @update:model-value="activateRole"
       />
     </div>
@@ -118,7 +122,7 @@ onMounted(() => {
     </v-form>
   </ModalDialog>
 </template>
-<style> 
+<style>
 .profile-roles {
   max-width: 300px;
 }
