@@ -1,231 +1,140 @@
-<template>
-  <v-container fluid>
-    <h3>Здесь будет CRUD для стран!</h3>
-    <data-table
-      :headers="headers"
-      :items="data"
-      :loading="loading"
-    >
-      <template #top-button>
-        <v-btn
-          v-show="!isHidden"
-          class="mx-2"
-          color="primary"
-          variant="elevated"
-          @click="dialog = true"
-        >
-          Добавить
-        </v-btn>
-      </template>
-      <template #item.actions="{ item }">
-        <div class="text-left d-flex ga-2">
-          <hint msg="Редактировать">
-            <v-btn
-              v-show="!isHidden"
-              class="mx-2"
-              color="primary"
-              variant="text"
-              size="x-small"
-              icon="edit"
-              @click="editedItem(item)"
-            />
-          </hint>
-          <hint msg="Удалить">
-            <v-btn
-              v-show="!isHidden"
-              class="mx-2"
-              color="primary"
-              variant="text"
-              size="x-small"
-              icon="delete"
-              @click="deleteDialogIsOpen = true"
-            />
-          </hint>
-          <confirm-dialog
-            ref="deleteDialog"
-            v-model="deleteDialogIsOpen"
-            @handle-ok="deleteItem(item)"
-          />
-        </div>
-      </template>
-    </data-table>
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useCountryStore } from '@/stores/country';
+import { useAppStore } from '@/stores/app';
+import { storeToRefs } from 'pinia';
+import ModalDialog from '@/components/CountryModal.vue';
+import Rules from '@/utils/rules';
 
-    <v-dialog
-      v-model="dialog"
-      persistent
-      :max-width="600"
-      scrollable
-    >
-      <template #activator="{props}">
-        <slot
-          name="activator"
-          v-bind="props"
-        />
-      </template>
-      <v-card>
-        <v-card-title>
-          <v-spacer />
-          <span class="headline">{{ formData.id ? 'Редактировать' : 'Добавить' }}</span>
-          <v-spacer />
-        </v-card-title>
+const countryStore = useCountryStore();
+const editedCountry = ref({ id: null, name: '', code: '' });
 
-        <v-card-text class="py-4">
-          <v-form v-model="valid">
-            <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.name"
-                  label="Название"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.description"
-                  label="Описание"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
+const appStore = useAppStore();
+const { countries } = storeToRefs(countryStore);
 
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            :disabled="!valid"
-            color="primary"
-            variant="elevated"
-            @click="save"
-          >
-            Сохранить
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            @click="cancel"
-          >
-            Отмена
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+const countryDialog = ref(false);
+const loading = ref(false);
+const isEditing = ref(false);
 
-    <confirm-dialog>
-      <confirm-dialog
-        ref="dialog"
-        v-model="confirmDialog"
-      />
-    </confirm-dialog>
-  </v-container>
-</template>
+interface CountryForm {
+  id?: number;
+  name: string;
+  description: string;
+}
+const newCountry = ref<CountryForm>({
+  name: '',
+  description: '',
+});
 
-<script>
-import Rules from '@/api/rules';
-import { mapActions, mapState } from 'pinia';
-import { useStore } from '@/store/store.js';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import Hint from '@/components/Hint.vue';
+const headers = [
+  { title: 'ID', key: 'id' },
+  { title: 'Название', key: 'name' },
+  { title: 'Код', key: 'description' },
+  { title: 'Действия', key: 'actions' },
+];
 
-export default {
-  name: 'Country',
-  components: { Hint, ConfirmDialog },
-  data: () => ({
-    deleteDialogIsOpen: false,
-    rules: Rules,
-    loading: false,
-    valid: false,
-    data: [],
-    headers: [
-      { title: 'ID', key: 'id' },
-      { title: 'Название', key: 'name' },
-      { title: 'Описание', key: 'description' },
-    ],
-    formData: {},
-    dialog: false,
-    confirmDialog: null,
-    isHidden: false,
-    creditProductType: [],
-    partners: [],
-  }),
-  computed: {
-    ...mapState(useStore, ['checkAccess']),
-  },
-  created() {
-    this.initialize();
-  },
-  methods: {
-    ...mapActions(useStore,['addSuccessMessages', 'addErrorMessages']),
-
-    editedItem(item) {
-      this.formData = item;
-      this.dialog = true;
-    },
-
-    deleteItem(item) {
-      this.$http
-        .delete(`/country/${item.id}`)
-        .then(r => {
-          if (r.status === 204) {
-            this.addSuccessMessages('Успешно удалено');
-            this.initialize();
-          } else {
-            this.addErrorMessages('Ошибка при удалении');
-          }
-          this.$refs.deleteDialog.close();
-        });
-    },
-    cancel() {
-      this.dialog = false;
-      this.formData = {};
-      this.getAll();
-    },
-    save() {
-      const method = this.formData.id ? 'put' : 'post';
-      const url = '/country';
-      const model = {
-        id: this.formData.id,
-        name: this.formData.name,
-        description: this.formData.description,
-      };
-      this.$http[method](url, model)
-        .then(r => {
-          if (r.data == null) {
-            this.addErrorMessages(this.formData.id ? 'Ошибка при обновлении' : 'Ошибка при добавлении');
-          } else {
-            this.addSuccessMessages(this.formData.id ? 'Успешно обновлено' : 'Успешно добавлено');
-          }
-          this.dialog = false;
-          this.formData = {
-            id: null,
-            name: '',
-            description: '',
-          };
-          this.initialize();
-        }).catch(error => {
-        console.error('Ошибка при сохранении:', error);
-        this.addErrorMessages('Ошибка при сохранении данных');
-      });
-    },
-
-    initialize() {
-      this.loading = true;
-      this.$http
-        .get('/country')
-        .then(response => {
-            this.data = response.data.content;
-          },
-          e => this.setGlobalErrorMessage(e))
-        .finally(() => {
-          this.loading = false;
-        });
-    },
-
-  },
-
+const getCountries = async(): Promise<void> => {
+  loading.value = true;
+  try {
+    await countryStore.fetchCountries();
+  } catch (error) {
+    console.error('Ошибка загрузки стран:', error);
+  } finally {
+    loading.value = false;
+  }
 };
+
+const deleteCountry = async(id: number): Promise<void> => {
+  try {
+    await countryStore.deleteCountry(id);
+    await getCountries();
+  } catch (error) {
+    console.error('Ошибка удаления страны:', error);
+  }
+};
+
+const saveCountry = async(): Promise<void> => {
+  try {
+    if (isEditing.value) {
+      await countryStore.updateCountry({
+        id: newCountry.value.id,
+        name: newCountry.value.name,
+        description: newCountry.value.description,
+      });
+    } else {
+      await countryStore.createCountry({
+        name: newCountry.value.name,
+        description: newCountry.value.description,
+      });
+    }
+    closeCountryModal();
+    await getCountries();
+  } catch (error) {
+    console.error('Ошибка сохранения страны:', error);
+  }
+};
+
+const editCountry = (id: number): void => {
+  const country = countries.value.find(c => c.id === id);
+  if (country) {
+    newCountry.value = { id: country.id, name: country.name, description: country.description };
+    isEditing.value = true;
+    countryDialog.value = true;
+  }
+};
+
+const closeCountryModal = (): void => {
+  newCountry.value = { name: '', description: '' };
+  countryDialog.value = false;
+  isEditing.value = false;
+};
+
+const openCreateCountryModal = (): void => {
+  newCountry.value = { name: '', description: '' };
+  isEditing.value = false;
+  countryDialog.value = true;
+};
+
+const canUpdate = computed(() => appStore.checkAccess('country', 'update'));
+const canDelete = computed(() => appStore.checkAccess('country', 'delete'));
+const canCreate = computed(() => appStore.checkAccess('country', 'create'));
+
+onMounted(getCountries);
 </script>
 
-<style scoped>
+<template>
+  <v-container>
+    <ModalDialog
+      v-model:dialog="countryDialog"
+      :title="isEditing ? 'Редактировать страну' : 'Создать страну'"
+      :confirm-text="isEditing ? 'Сохранить' : 'Создать'"
+      @confirm="saveCountry"
+      @close="closeCountryModal"
+    >
+      <form>
+        <v-text-field v-model="newCountry.name" :rules="Rules.required" label="Название" />
+        <v-text-field v-model="newCountry.description" :rules="Rules.required" label="Код" />
+      </form>
+    </ModalDialog>
 
-</style>
+    <v-card>
+      <v-card-title class="d-flex align-center justify-space-between">
+        Список стран
+        <v-btn v-if="canCreate" color="primary" @click="openCreateCountryModal">
+          Создать страну
+        </v-btn>
+      </v-card-title>
+
+      <v-data-table :headers="headers" :items="countries" :loading="loading" item-value="id">
+        <template #item.actions="{ item }">
+          <v-btn v-if="canDelete" color="red" size="small" @click="deleteCountry(item.id)">
+            Удалить
+          </v-btn>
+          <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editCountry(item.id)">
+            Редактировать
+          </v-btn>
+        </template>
+      </v-data-table>
+    </v-card>
+  </v-container>
+</template>
