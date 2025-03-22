@@ -1,17 +1,24 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
-import {useAppStore} from "@/stores/app";
+import { useAppStore } from '@/stores/app';
 
 const appStore = useAppStore();
 
 interface Truck {
-  id: number;
+  id?: number;
   registrationCountry: string;
-  volumeM3: number;
+  volumeTotalM3: number;
+  volumeOccupiedM3: number;
+  volumeAvailableM3: number;
   departureWarehouse: string;
-  deliveryWarehouse: string;
+  arrivalWarehouse: string;
+  driverFullname: string;
   driverPhone: string;
-  additionalInformation: string;
+  departureDatePlanned: Date;
+  departureDateActual: Date;
+  arrivalDatePlanned: Date;
+  arrivalDateActual: Date;
+  additionalInformation?: string;
 }
 
 class State {
@@ -66,7 +73,6 @@ export const useTruckStore = defineStore('truck', {
 
       return response;
     },
-
 
     async deleteTruck(id: number) {
       try {

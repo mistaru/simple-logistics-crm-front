@@ -16,29 +16,50 @@ const loading = ref(false);
 interface TruckForm {
   id?: number;
   registrationCountry: string;
-  volumeM3: number;
+  volumeTotalM3: number;
+  volumeOccupiedM3: number;
+  volumeAvailableM3: number;
   departureWarehouse: string;
-  deliveryWarehouse: string;
+  arrivalWarehouse: string;
+  driverFullname: string;
   driverPhone: string;
+  departureDatePlanned: Date;
+  departureDateActual: Date;
+  arrivalDatePlanned: Date;
+  arrivalDateActual: Date;
   additionalInformation?: string;
 }
 
 const newTruck = ref<TruckForm>({
   registrationCountry: '',
-  volumeM3: 0,
+  volumeTotalM3: 0,
+  volumeOccupiedM3: 0,
+  volumeAvailableM3: 0,
   departureWarehouse: '',
-  deliveryWarehouse: '',
+  arrivalWarehouse: '',
+  driverFullname: '',
   driverPhone: '',
+  departureDatePlanned: new Date(),
+  departureDateActual: new Date(),
+  arrivalDatePlanned: new Date(),
+  arrivalDateActual: new Date(),
   additionalInformation: '',
 });
 
 const headers = [
   { title: 'ID', key: 'id' },
   { title: 'Страна регистрации', key: 'registrationCountry' },
-  { title: 'Объем (м3)', key: 'volumeM3' },
+  { title: 'Объем общий (м3)', key: 'volumeTotalM3' },
+  { title: 'Объем занятый (м3)', key: 'volumeOccupiedM3' },
+  { title: 'Объем доступный (м3)', key: 'volumeAvailableM3' },
   { title: 'Склад отправки', key: 'departureWarehouse' },
-  { title: 'Склад доставки', key: 'deliveryWarehouse' },
+  { title: 'Склад доставки', key: 'arrivalWarehouse' },
+  { title: 'ФИО водителя', key: 'driverFullname' },
   { title: 'Телефон водителя', key: 'driverPhone' },
+  { title: 'Планируемая дата отправки', key: 'departureDatePlanned' },
+  { title: 'Фактическая дата отправки', key: 'departureDateActual' },
+  { title: 'Планируемая дата доставки', key: 'arrivalDatePlanned' },
+  { title: 'Фактическая дата доставки', key: 'arrivalDateActual' },
   { title: 'Доп. информация', key: 'additionalInformation' },
   { title: 'Действия', key: 'actions', sortable: false },
 ];
@@ -54,7 +75,7 @@ const getTrucks = async(): Promise<void> => {
   }
 };
 
-const deleteTruck = async (id: number) => {
+const deleteTruck = async(id: number) => {
   try {
     await truckStore.deleteTruck(id);
     await getTrucks();
@@ -63,7 +84,7 @@ const deleteTruck = async (id: number) => {
   }
 };
 
-const saveTruck = async (): Promise<void> => {
+const saveTruck = async(): Promise<void> => {
   try {
     if (isEditing.value) {
       await truckStore.updateTruck({ ...newTruck.value });
@@ -89,10 +110,17 @@ const editTruck = (id: number): void => {
 const closeTruckModal = (): void => {
   newTruck.value = {
     registrationCountry: '',
-    volumeM3: 0,
+    volumeTotalM3: 0,
+    volumeOccupiedM3: 0,
+    volumeAvailableM3: 0,
     departureWarehouse: '',
-    deliveryWarehouse: '',
+    arrivalWarehouse: '',
+    driverFullname: '',
     driverPhone: '',
+    departureDatePlanned: new Date(),
+    departureDateActual: new Date(),
+    arrivalDatePlanned: new Date(),
+    arrivalDateActual: new Date(),
     additionalInformation: '',
   };
   truckDialog.value = false;
@@ -102,10 +130,17 @@ const closeTruckModal = (): void => {
 const openCreateTruckModal = (): void => {
   newTruck.value = {
     registrationCountry: '',
-    volumeM3: 0,
+    volumeTotalM3: 0,
+    volumeOccupiedM3: 0,
+    volumeAvailableM3: 0,
     departureWarehouse: '',
-    deliveryWarehouse: '',
+    arrivalWarehouse: '',
+    driverFullname: '',
     driverPhone: '',
+    departureDatePlanned: new Date(),
+    departureDateActual: new Date(),
+    arrivalDatePlanned: new Date(),
+    arrivalDateActual: new Date(),
     additionalInformation: '',
   };
   isEditing.value = false;
@@ -131,10 +166,17 @@ onMounted(getTrucks);
     >
       <v-form>
         <v-text-field v-model="newTruck.registrationCountry" label="Страна регистрации" required />
-        <v-text-field v-model="newTruck.volumeM3" label="Объем (м3)" type="number" required />
+        <v-text-field v-model="newTruck.volumeTotalM3" label="Объем общий (м3)" type="number" required />
+        <v-text-field v-model="newTruck.volumeOccupiedM3" label="Объем занятый (м3)" type="number" required />
+        <v-text-field v-model="newTruck.volumeAvailableM3" label="Объем доступный (м3)" type="number" required />
         <v-text-field v-model="newTruck.departureWarehouse" label="Склад отправки" required />
-        <v-text-field v-model="newTruck.deliveryWarehouse" label="Склад доставки" required />
+        <v-text-field v-model="newTruck.arrivalWarehouse" label="Склад доставки" required />
+        <v-text-field v-model="newTruck.driverFullname" label="ФИО водителя" required />
         <v-text-field v-model="newTruck.driverPhone" label="Телефон водителя" required />
+        <v-text-field v-model="newTruck.departureDatePlanned" label="Планируемая дата отправки" type="date" required />
+        <v-text-field v-model="newTruck.departureDateActual" label="Фактическая дата отправки" type="date" required />
+        <v-text-field v-model="newTruck.arrivalDatePlanned" label="Планируемая дата доставка" type="date" required />
+        <v-text-field v-model="newTruck.arrivalDateActual" label="Фактическая дата доставки" type="date" required />
         <v-text-field v-model="newTruck.additionalInformation" label="Доп. информация" />
       </v-form>
     </TruckModal>
