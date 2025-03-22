@@ -1,265 +1,232 @@
+<script setup lang="ts">
+import { ref, computed, onMounted } from 'vue';
+import { useTruckStore } from '@/stores/truck';
+import { useAppStore } from '@/stores/app';
+import { storeToRefs } from 'pinia';
+import TruckModal from '@/components/TruckModal.vue';
+
+const truckStore = useTruckStore();
+const appStore = useAppStore();
+const { trucks } = storeToRefs(truckStore);
+
+const truckDialog = ref(false);
+const isEditing = ref(false);
+const loading = ref(false);
+
+interface TruckForm {
+  id?: number;
+  registrationCountry: string;
+  volumeTotalM3: number;
+  volumeOccupiedM3: number;
+  volumeAvailableM3: number;
+  departureWarehouse: string;
+  arrivalWarehouse: string;
+  driverFullname: string;
+  driverPhone: string;
+  departureDatePlanned: Date;
+  departureDateActual: Date;
+  arrivalDatePlanned: Date;
+  arrivalDateActual: Date;
+  additionalInformation?: string;
+  // availableVolume: number;
+}
+
+const newTruck = ref<TruckForm>({
+  registrationCountry: '',
+  volumeTotalM3: 0,
+  volumeOccupiedM3: 0,
+  volumeAvailableM3: 0,
+  departureWarehouse: '',
+  arrivalWarehouse: '',
+  driverFullname: '',
+  driverPhone: '',
+  departureDatePlanned: new Date(),
+  departureDateActual: new Date(),
+  arrivalDatePlanned: new Date(),
+  arrivalDateActual: new Date(),
+  additionalInformation: '',
+  // availableVolume: 0,
+});
+
+const headers = [
+  { title: 'ID', key: 'id' },
+  { title: 'Страна регистрации', key: 'registrationCountry' },
+  { title: 'Объем общий (м3)', key: 'volumeTotalM3' },
+  { title: 'Объем занятый (м3)', key: 'volumeOccupiedM3' },
+  { title: 'Объем доступный (м3)', key: 'volumeAvailableM3' },
+  { title: 'Склад отправки', key: 'departureWarehouse' },
+  { title: 'Склад доставки', key: 'arrivalWarehouse' },
+  { title: 'ФИО водителя', key: 'driverFullname' },
+  { title: 'Телефон водителя', key: 'driverPhone' },
+  { title: 'Планируемая дата отправки', key: 'departureDatePlanned' },
+  { title: 'Фактическая дата отправки', key: 'departureDateActual' },
+  { title: 'Планируемая дата доставки', key: 'arrivalDatePlanned' },
+  { title: 'Фактическая дата доставки', key: 'arrivalDateActual' },
+  { title: 'Доп. информация', key: 'additionalInformation' },
+  { title: 'Действия', key: 'actions', sortable: false },
+];
+
+const getTrucks = async(): Promise<void> => {
+  loading.value = true;
+  try {
+    await truckStore.fetchTrucks();
+  } catch (error) {
+    console.error('Ошибка загрузки траков:', error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const deleteTruck = async(id: number) => {
+  try {
+    await truckStore.deleteTruck(id);
+    await getTrucks();
+  } catch (error) {
+    console.error('Ошибка удаления трака:', error);
+  }
+};
+
+const saveTruck = async(): Promise<void> => {
+  try {
+    const payload = {
+      ...newTruck.value,
+      departureDatePlanned: formatDateTime(newTruck.value.departureDatePlanned),
+      departureDateActual: formatDateTime(newTruck.value.departureDateActual),
+      arrivalDatePlanned: formatDateTime(newTruck.value.arrivalDatePlanned),
+      arrivalDateActual: formatDateTime(newTruck.value.arrivalDateActual),
+    };
+    if (isEditing.value) {
+      await truckStore.updateTruck(payload);
+    } else {
+      await truckStore.createTruck(payload);
+    }
+    closeTruckModal();
+    await getTrucks();
+  } catch (error) {
+    console.error('Ошибка сохранения трака:', error);
+  }
+};
+
+const editTruck = (id: number): void => {
+  const truck = trucks.value.find(t => t.id === id);
+  if (truck) {
+    newTruck.value = { ...truck };
+    isEditing.value = true;
+    truckDialog.value = true;
+  }
+};
+
+// const availableVolume = computed(() => {
+//   return newTruck.value.volumeTotalM3 - newTruck.value.volumeOccupiedM3;
+// });
+//
+// const trucksWithAvailableVolume = computed(() => {
+//   return trucks.value.map(truck => ({
+//     ...truck,
+//     availableVolume: truck.volumeTotalM3 - truck.volumeOccupiedM3,
+//   }));
+// });
+
+const closeTruckModal = (): void => {
+  newTruck.value = {
+    registrationCountry: '',
+    volumeTotalM3: 0,
+    volumeOccupiedM3: 0,
+    volumeAvailableM3: 0,
+    departureWarehouse: '',
+    arrivalWarehouse: '',
+    driverFullname: '',
+    driverPhone: '',
+    departureDatePlanned: new Date(),
+    departureDateActual: new Date(),
+    arrivalDatePlanned: new Date(),
+    arrivalDateActual: new Date(),
+    additionalInformation: '',
+    //availableVolume: 0,
+  };
+  truckDialog.value = false;
+  isEditing.value = false;
+};
+
+const openCreateTruckModal = (): void => {
+  newTruck.value = {
+    registrationCountry: '',
+    volumeTotalM3: 0,
+    volumeOccupiedM3: 0,
+    volumeAvailableM3: 0,
+    departureWarehouse: '',
+    arrivalWarehouse: '',
+    driverFullname: '',
+    driverPhone: '',
+    departureDatePlanned: new Date(),
+    departureDateActual: new Date(),
+    arrivalDatePlanned: new Date(),
+    arrivalDateActual: new Date(),
+    additionalInformation: '',
+    //availableVolume: 0,
+  };
+  isEditing.value = false;
+  truckDialog.value = true;
+};
+
+const formatDateTime = (value) => {
+  if (!value) return null;
+  return new Date(value).toISOString();
+};
+
+const canUpdate = computed(() => appStore.checkAccess('truck', 'update'));
+const canDelete = computed(() => appStore.checkAccess('truck', 'delete'));
+const canCreate = computed(() => appStore.checkAccess('truck', 'create'));
+
+onMounted(getTrucks);
+</script>
+
 <template>
-  <v-container fluid>
-    <data-table
-      :headers="headers"
-      :items="data"
-      :loading="loading"
+  <v-container>
+    <!-- Модальное окно для создания/редактирования -->
+    <TruckModal
+      v-model:dialog="truckDialog"
+      :title="isEditing ? 'Редактировать фуру' : 'Добавить фуру'"
+      :confirm-text="isEditing ? 'Сохранить' : 'Создать'"
+      @confirm="saveTruck"
+      @close="closeTruckModal"
     >
-      <template #top-button>
-        <v-btn
-          v-show="!isHidden"
-          class="mx-2"
-          color="primary"
-          variant="elevated"
-          @click="dialog = true"
-        >
-          Добавить
+      <v-form>
+        <v-text-field v-model="newTruck.registrationCountry" label="Страна регистрации" required />
+        <v-text-field v-model="newTruck.volumeTotalM3" label="Объем общий (м3)" type="number" required />
+        <v-text-field v-model="newTruck.volumeOccupiedM3" label="Объем занятый (м3)" type="number" required />
+        <v-text-field v-model="newTruck.volumeAvailableM3" label="Объем доступный (м3)" type="number" required />
+        <v-text-field v-model="newTruck.departureWarehouse" label="Склад отправки" required />
+        <v-text-field v-model="newTruck.arrivalWarehouse" label="Склад доставки" required />
+        <v-text-field v-model="newTruck.driverFullname" label="ФИО водителя" required />
+        <v-text-field v-model="newTruck.driverPhone" label="Телефон водителя" required />
+        <v-text-field v-model="newTruck.departureDatePlanned" label="Планируемая дата отправки" type="datetime-local" required />
+        <v-text-field v-model="newTruck.departureDateActual" label="Фактическая дата отправки" type="datetime-local" required />
+        <v-text-field v-model="newTruck.arrivalDatePlanned" label="Планируемая дата доставки" type="datetime-local" required />
+        <v-text-field v-model="newTruck.arrivalDateActual" label="Фактическая дата доставки" type="datetime-local" required />
+        <v-text-field v-model="newTruck.additionalInformation" label="Доп. информация" />
+      </v-form>
+    </TruckModal>
+
+    <!-- Таблица с траками -->
+    <v-card>
+      <v-card-title class="d-flex align-center justify-space-between">
+        Список фур
+        <v-btn v-if="canCreate" color="primary" @click="openCreateTruckModal">
+          Добавить фуру
         </v-btn>
-      </template>
-      <template #item.actions="{ item }">
-        <div class="text-left d-flex ga-2">
-          <hint msg="Редактировать">
-            <v-btn
-              v-show="!isHidden"
-              class="mx-2"
-              color="primary"
-              variant="text"
-              size="x-small"
-              icon="edit"
-              @click="editedItem(item)"
-            />
-          </hint>
-          <hint msg="Удалить">
-            <v-btn
-              v-show="!isHidden"
-              class="mx-2"
-              color="primary"
-              variant="text"
-              size="x-small"
-              icon="delete"
-              @click="deleteDialogIsOpen = true"
-            />
-          </hint>
-          <confirm-dialog
-            ref="deleteDialog"
-            v-model="deleteDialogIsOpen"
-            @handle-ok="deleteItem(item)"
-          />
-        </div>
-      </template>
-    </data-table>
+      </v-card-title>
 
-    <v-dialog
-      v-model="dialog"
-      persistent
-      :max-width="600"
-      scrollable
-    >
-      <template #activator="{props}">
-        <slot
-          name="activator"
-          v-bind="props"
-        />
-      </template>
-      <v-card>
-        <v-card-title>
-          <v-spacer />
-          <span class="headline">{{ formData.id ? 'Редактировать' : 'Добавить' }}</span>
-          <v-spacer />
-        </v-card-title>
-
-        <v-card-text class="py-4">
-          <v-form v-model="valid">
-            <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.registrationCountry"
-                  label="Страна регистрации"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.volumeM3"
-                  label="Объем (м3)"
-                  type="number"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.departureWarehouse"
-                  label="Склад отправки"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.deliveryWarehouse"
-                  label="Склад доставки"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.driverPhone"
-                  label="Телефон водителя"
-                  :rules="[rules.required]"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field
-                  v-model="formData.additionalInformation"
-                  label="Доп. информация"
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            :disabled="!valid"
-            color="primary"
-            variant="elevated"
-            @click="save"
-          >
-            Сохранить
+      <v-data-table :headers="headers" :items="trucks" :loading="loading" item-value="id">
+        <template #item.actions="{ item }">
+          <v-btn v-if="canDelete" color="red" size="small" @click="deleteTruck(item.id)">
+            Удалить
           </v-btn>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            @click="cancel"
-          >
-            Отмена
+          <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editTruck(item.id)">
+            Редактировать
           </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <confirm-dialog>
-      <confirm-dialog
-        ref="dialog"
-        v-model="confirmDialog"
-      />
-    </confirm-dialog>
+        </template>
+      </v-data-table>
+    </v-card>
   </v-container>
 </template>
-
-<script>
-import Rules from '@/api/rules';
-import { mapActions, mapState } from 'pinia';
-import { useStore } from '@/store/store.js';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
-import Hint from '@/components/Hint.vue';
-
-export default {
-  name: 'Truck',
-  components: { Hint, ConfirmDialog },
-  data: () => ({
-    deleteDialogIsOpen: false,
-    rules: Rules,
-    loading: false,
-    valid: false,
-    isHidden: false,
-    $isMobile: false,
-    data: [],
-    headers: [
-      { title: 'ID', key: 'id' },
-      { title: 'Страна регистрации', key: 'registrationCountry' },
-      { title: 'Объем (м3)', key: 'volumeM3' },
-      { title: 'Склад отправки', key: 'departureWarehouse' },
-      { title: 'Слад доставки', key: 'deliveryWarehouse' },
-      { title: 'Телефон водителя', key: 'driverPhone' },
-      { title: 'Доп. информация', key: 'additionalInformation' },
-      { title: 'Действие', key: 'actions', sortable: false, align: 'start' },
-    ],
-    formData: {},
-    dialog: false,
-    confirmDialog: null,
-    creditProductType: [],
-    partners: [],
-  }),
-  computed: {
-    ...mapState(useStore, ['checkAccess']),
-  },
-  created() {
-    this.initialize();
-    // this.getAll();
-  },
-  methods: {
-    ...mapActions(useStore,['addSuccessMessages', 'addErrorMessages']),
-
-    editedItem(item) {
-      this.formData = item;
-      this.dialog = true;
-    },
-
-    deleteItem(item) {
-      this.$http
-        .delete(`/truck/${item.id}`)
-        .then(r => {
-          if (r.status === 204) {
-            this.addSuccessMessages('Успешно удалено');
-            this.initialize();
-          } else {
-            this.addErrorMessages('Ошибка при удалении');
-          }
-          this.$refs.deleteDialog.close();
-        });
-    },
-    cancel() {
-      this.dialog = false;
-      this.formData = {};
-      this.getAll();
-    },
-    save() {
-      const method = this.formData.id ? 'put' : 'post';
-      const url = '/truck';
-      const truckModel = {
-        id: this.formData.id,
-        registrationCountry: this.formData.registrationCountry,
-        volumeM3: this.formData.volumeM3,
-        departureWarehouse: this.formData.departureWarehouse,
-        deliveryWarehouse: this.formData.deliveryWarehouse,
-        driverPhone: this.formData.driverPhone,
-        additionalInformation: this.formData.additionalInformation,
-      };
-      this.$http[method](url, truckModel)
-        .then(r => {
-          if (r.data == null) {
-            this.addErrorMessages(this.formData.id ? 'Ошибка при обновлении' : 'Ошибка при добавлении');
-          } else {
-            this.addSuccessMessages(this.formData.id ? 'Успешно обновлено' : 'Успешно добавлено');
-          }
-          this.dialog = false;
-          this.formData = {
-            id: null,
-            registrationCountry: '',
-            volumeM3: null,
-            departureWarehouse: '',
-            deliveryWarehouse: '',
-            driverPhone: '',
-            additionalInformation: '',
-          };
-          this.initialize();
-        });
-    },
-
-    initialize() {
-      this.loading = true;
-      this.$http
-        .get('/truck')
-        .then(response => {
-          this.data = response.data;
-        },
-        e => this.setGlobalErrorMessage(e))
-        .finally(() => {
-          this.loading = false;
-        });
-    },
-  },
-
-};
-</script>

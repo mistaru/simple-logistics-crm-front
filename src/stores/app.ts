@@ -1,58 +1,106 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import { MENU, ACTIVATE_ROLE } from '@/const';
+import type { Permission, User } from '@/stores/types';
 
-interface User {
-  roles: {
-    active: boolean;
-    errorMessages: Array<any>,
-    permissions: {
-      name: { value: string };
-      operationPermissions: string;
-    }[];
+interface MenuItem {
+  screen: {
+    value: string;
+    description: string;
+    icon: string;
+  };
+  permissions: {
+    value: string;
+    authority: string;
+    description: string;
+    icon: string;
+    screenType: {
+      value: string;
+      description: string;
+      icon: string;
+    };
+    view: string;
   }[];
 }
-
-interface AppState {
+interface State {
   token: string;
   status: string;
+  initialized: boolean,
+  messages: Message[];
+  errorMessages: string[];
+  menuList: MenuItem[];
+  userPermissions: Permission[];
   user: User;
-  errorMessages: any[];
-  checkAccess: ({ permission, c, r, u, d }: { permission: string; c: boolean; r: boolean; u: boolean; d: boolean }) => boolean;
-  http: axios.AxiosInstance | null;
+}
+export interface Bids {
+  date: string,
+  count: number,
+}
+interface Message {
+  message: string;
+  isError: boolean;
+  isOpen: boolean;
 }
 
 export const useAppStore = defineStore('app', {
-  state: (): AppState => ({
+  state: (): State => ({
     token: '',
     status: '',
     errorMessages: [],
+    blackList: [],
+    initialized: false,
+    menuList: [],
+    userPermissions: [],
     user: {
+      id: 0,
+      name: '',
+      login: '',
       roles: [],
     },
-    checkAccess: () => false,
-    http: null,
+    messages: [],
   }),
   getters: {
     isLoggedIn: state => !!state.token,
+    checkAccess(state) {
+      return (view: string, accessType: 'create' | 'read' | 'update' | 'delete') => {
+        const permission = state.userPermissions.find(p => p.name.view === view);
+        if (!permission) return false;
+        const masks = { create: 8, read: 4, update: 2, delete: 1 };
+        return (Number(permission.access) & masks[accessType]) === masks[accessType];
+      };
+    },
   },
   actions: {
-    setHttp(http: axios.AxiosInstance): void {
-      this.http = http;
-    },
-    init() {
-      return new Promise ((res)=>{
-        const token = sessionStorage.getItem('token');
-        if (token) {
-          this.http.defaults.headers.common['Authorization'] = 'Bearer ' + token;
-          this.auth_success(token);
-          this.http.get('/auth/current')
-            .then(value => {
-              this.set_user(value.data);
-              res();
-            });
+    async addMessage(messageOrError: unknown, showErrorMessage = false) {
+      setTimeout(() => {
+        let isError = showErrorMessage;
+        let message = messageOrError;
+        if (typeof message !== 'string') {
+          message = getErrorMessage(message);
+          isError = true;
         }
-      });
+        this.messages = [...this.messages, { message: String(message), isError, isOpen: true }];
+      }, 1);
+    },
+    async init() {
+      const token = sessionStorage.getItem('token');
 
+      if (token) {
+        this.auth_success(token);
+
+        try {
+          const [data, error] = await fetchData('/auth/current');
+
+          if (error || !data) {
+            throw new Error(error?.message || 'Ошибка загрузки пользователя.');
+          }
+
+          this.set_user(data);
+        } catch (error) {
+          console.error('Ошибка загрузки пользователя:', error);
+        }
+      }
+
+      this.initialized = true;
     },
     auth_success(payload: string): void {
       this.status = 'success';
@@ -61,96 +109,105 @@ export const useAppStore = defineStore('app', {
     set_expired_date(val: number): void {
       sessionStorage.setItem('expired', val.toString());
     },
-    set_user(payload: any): void {
-      const hasAccess = (mask: string, c: boolean, r: boolean, u: boolean, d: boolean): boolean => {
-        let result = false;
-        if (c) result |= Boolean(Number(mask) & 0b1000);
-        if (r) result |= Boolean(Number(mask) & 0b0100);
-        if (u) result |= Boolean(Number(mask) & 0b0010);
-        if (d) result |= Boolean(Number(mask) & 0b0001);
-        return !!result;
-      };
-
-      this.user = payload;
-      this.checkAccess = ({ permission, c, r, u, d }: { permission: string; c: boolean; r: boolean; u: boolean; d: boolean }): boolean => {
-        let result = false;
-        if (this.user && this.user.roles) {
-          result = this.user.roles
-            .filter(role =>
-              role.active && role.permissions
-                .filter(p => p.name.value === permission && hasAccess(p.operationPermissions, c, r, u, d))
-                .length > 0)
-            .length > 0;
-        }
-        return result;
-      };
-    },
     auth_request(): void {
       this.status = 'loading';
     },
     auth_error(): void {
       this.status = 'error';
     },
-
-    login(user: { username: string; password: string }): Promise<any> {
-      return new Promise((resolve, reject) => {
+    async login(user: { username: string; password: string }) {
+      try {
         this.auth_request();
-        this.http.post('/public/auth/login', user)
-          .then(({ data }) => {
-            if (data.resultCode.value === 'OK') {
-              sessionStorage.setItem('token', data.result);
 
-              const token =  data.result;
-              const base64Url = token.split('.')[1];
-              const decodedValue = JSON.parse(window.atob(base64Url));
-
-              this.init();
-
-              this.set_expired_date(decodedValue.exp * 1000);
-              resolve(data);
-            } else {
-              reject(data.details || 'Ошибка! Обратитесь к администратору.');
-            }
-          },
-          err => {
-            this.auth_error();
-            sessionStorage.removeItem('token');
-            reject(err.response?.data?.message);
-          });
-      });
-    },
-
-    logout(): Promise<void> {
-      return new Promise((resolve) => {
-        this.token = '';
-        this.user = { roles: [] };
+        const [data] = await fetchData('/public/auth/login', {
+          method: 'POST',
+          body: JSON.stringify(user) as unknown as Record<string, never>,
+        });
+        if (data) {
+          sessionStorage.setItem('token', data);
+          const token = data;
+          const decodedValue = JSON.parse(window.atob(token.split('.')[1]));
+          await this.init();
+          this.set_expired_date(decodedValue.exp * 1000);
+          return data;
+        }
+      } catch (error) {
+        this.auth_error();
         sessionStorage.removeItem('token');
-        resolve();
-      });
+        throw error;
+      }
     },
-    refreshToken() {
-      return new Promise((resolve, reject) => {
-        this.http.get(`/public/auth/refreshToken/${this.token}`)
-          .then(resp => {
-            if (resp.data) {
-              sessionStorage.setItem('token', resp.data);
-              const token = resp.data;
-              const base64Url = token.split('.')[1];
-              const decodedValue = JSON.parse(window.atob(base64Url));
-              this.init();
-              this.set_expired_date(decodedValue.exp * 1000);
-              resolve(resp);
-            } else {
-              reject(resp.data.message || 'Ошибка! Обратитесь к администратору.');
-            }
-          },
-          err => {
-            this.auth_error();
-            sessionStorage.removeItem('token');
-            reject(err.response?.data?.message);
-          }
-          );
+    async logout() {
+      this.token = '';
+      this.user = {
+        id: 0,
+        name: '',
+        login: '',
+        roles: [],
+      };
+      sessionStorage.removeItem('token');
+    },
+    async refreshToken(): Promise<string> {
+      try {
+        const [data, error] = await fetchData(`/public/auth/refreshToken/${this.token}`);
+
+        if (error || !data) {
+          throw new Error(error?.message || 'Ошибка! Обратитесь к администратору.');
+        }
+
+        sessionStorage.setItem('token', data);
+        const decodedValue = JSON.parse(window.atob(data.split('.')[1]));
+        await this.init();
+        this.set_expired_date(decodedValue.exp * 1000);
+
+        return data;
+      } catch (error) {
+        this.auth_error();
+        sessionStorage.removeItem('token');
+        throw error;
+      }
+    },
+    async activateRole(roleId: string) {
+
+      const [, error] = await fetchData(ACTIVATE_ROLE, { params: { roleId } });
+      return !error;
+    },
+    set_user(payload: User) {
+      this.user = payload as User;
+
+      const activeRoles = payload.roles.filter(role => role.active);
+      const permissions: Permission[] = [];
+      activeRoles.forEach((role) => {
+        role?.permissions?.forEach((permission: Permission) => {
+          permissions.push({
+            id: permission.id,
+            name: {
+              value: permission.name.value,
+              authority: permission.name.authority,
+              description: permission.name.description,
+              icon: permission.name.icon,
+              screenType: {
+                value: permission.name.screenType.value,
+                description: permission.name.screenType.description,
+                icon: permission.name.screenType.icon,
+              },
+              view: permission.name.view,
+            },
+            access: Number(permission.access),
+          });
+        });
       });
+
+      this.userPermissions = permissions;
+    },
+    async fetchMenu() {
+      try {
+        const [response] = await fetchData(MENU);
+        this.menuList = response || [];
+      } catch (error) {
+        console.error('Ошибка загрузки меню:', error);
+        this.menuList = [];
+      }
     },
   },
 });

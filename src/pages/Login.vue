@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useAppStore } from '../stores/app.ts';
+import { useAppStore } from '@/stores/app';
 import { useRouter } from 'vue-router';
-import { useNotificationStore } from '../stores/notifications';
+import { useNotificationStore } from '@/stores/notifications';
 const { addNotification } = useNotificationStore();
 const username = ref('');
 const password = ref('');
@@ -16,13 +16,11 @@ const handleLogin = () => {
     };
     store.login(user)
       .then((data) => {
-        if (data.resultCode.value === 'OK') {
-          router.push('/home');
-        } else {
-          addNotification('error', data.details);
+        if (data) {
+          store.fetchMenu();
+          router.push('/');
         }
-      })
-      .catch(err => addNotification('error', err));
+      });
   }
 };
 const isDisabledBtn = computed(() => !username.value || !password.value);
@@ -53,7 +51,7 @@ const isDisabledBtn = computed(() => !username.value || !password.value);
               class="w-50"
             >
               <v-img
-                src="@/assets/logistic.jpg"
+                src="@/assets/logo.jpg"
                 alt="logo"
                 height="100"
                 contain
@@ -72,7 +70,9 @@ const isDisabledBtn = computed(() => !username.value || !password.value);
               label="Логин"
               placeholder="Введите логин"
               prepend-icon="mdi-account"
+              autocomplete="username"
               type="text"
+              class="mb-4"
               required
             />
 
@@ -84,6 +84,7 @@ const isDisabledBtn = computed(() => !username.value || !password.value);
               prepend-icon="mdi-lock"
               type="password"
               required
+              autocomplete="current-password"
             />
 
             <v-btn

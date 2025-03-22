@@ -19,7 +19,8 @@ export const useNotificationStore = defineStore('notifications', () => {
 
   const removeNotification = (id: number) => {
     const notificationElement = document.querySelector(`[data-id="${id}"]`);
-    if (notificationElement) {
+
+    if (notificationElement instanceof HTMLElement) {
       notificationElement.style.opacity = '0';
     }
 

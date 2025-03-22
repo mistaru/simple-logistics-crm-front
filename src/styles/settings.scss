@@ -8,3 +8,15 @@
 // @use 'vuetify/settings' with (
 //   $color-pack: false
 // );
+.v-input__details {
+  display:none;
+}
+.flex-05 {
+  flex: 0.5;
+}
+.flex-1 {
+  flex: 1
+}
+.max-w-33 {
+  max-width: 33%;
+}
