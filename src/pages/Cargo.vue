@@ -2,8 +2,8 @@
   <v-container fluid>
     <data-table
       :headers="headers"
-      :items="data"
-      :loading="loading"
+      :items="cargoStore.cargos"
+      :loading="cargoStore.loading"
     >
       <template #top-button>
         <v-btn
@@ -11,7 +11,7 @@
           class="mx-2"
           color="primary"
           variant="elevated"
-          @click="dialog = true"
+          @click="openDialog"
         >
           Добавить
         </v-btn>
@@ -26,7 +26,7 @@
               variant="text"
               size="x-small"
               icon="edit"
-              @click="editedItem(item)"
+              @click="editItem(item)"
             />
           </hint>
           <hint msg="Удалить">
@@ -37,24 +37,14 @@
               variant="text"
               size="x-small"
               icon="delete"
-              @click="deleteDialogIsOpen = true"
+              @click="confirmDelete(item)"
             />
           </hint>
-          <confirm-dialog
-            ref="deleteDialog"
-            v-model="deleteDialogIsOpen"
-            @handle-ok="deleteItem(item)"
-          />
         </div>
       </template>
     </data-table>
 
-    <v-dialog
-      v-model="dialog"
-      persistent
-      :max-width="600"
-      scrollable
-    >
+    <v-dialog v-model="dialog" persistent max-width="600">
       <v-card>
         <v-card-title>
           <v-spacer />
@@ -66,58 +56,25 @@
           <v-form v-model="valid">
             <v-row>
               <v-col cols="12">
-                <v-text-field
-                  v-model="formData.weight"
-                  label="Вес (кг)"
-                  type="number"
-                  :rules="[rules.required]"
-                />
+                <v-text-field v-model="formData.weight" label="Вес (кг)" type="number" :rules="[rules.required]" />
               </v-col>
               <v-col cols="12">
-                <v-text-field
-                  v-model="formData.volume"
-                  label="Объем (м³)"
-                  type="number"
-                  :rules="[rules.required]"
-                />
+                <v-text-field v-model="formData.volume" label="Объем (м³)" type="number" :rules="[rules.required]" />
               </v-col>
               <v-col cols="12">
-                <v-text-field
-                  v-model="formData.quantity"
-                  label="Количество"
-                  type="number"
-                  :rules="[rules.required]"
-                />
+                <v-text-field v-model="formData.quantity" label="Количество" type="number" :rules="[rules.required]" />
               </v-col>
               <v-col cols="12">
-                <v-text-field
-                  v-model="formData.warehouseArrivalDate"
-                  label="Дата прибытия на склад"
-                  type="datetime-local"
-                />
+                <v-text-field v-model="formData.warehouseArrivalDate" label="Дата прибытия" type="datetime-local" />
               </v-col>
               <v-col cols="12">
-                <v-text-field
-                  v-model="formData.shipmentDate"
-                  label="Дата отправки"
-                  type="datetime-local"
-                />
+                <v-text-field v-model="formData.shipmentDate" label="Дата отправки" type="datetime-local" />
               </v-col>
               <v-col cols="12">
-                <v-select
-                  v-model="formData.status"
-                  :items="statuses"
-                  item-title="description"
-                  item-value="value"
-                  label="Статус груза"
-                  :rules="[rules.required]"
-                />
+                <v-select v-model="formData.status" :items="statuses" item-title="description" item-value="value" label="Статус" :rules="[rules.required]" />
               </v-col>
               <v-col cols="12">
-                <v-text-field
-                  v-model="formData.description"
-                  label="Описание"
-                />
+                <v-text-field v-model="formData.description" label="Описание" />
               </v-col>
             </v-row>
           </v-form>
@@ -125,134 +82,108 @@
 
         <v-card-actions>
           <v-spacer />
-          <v-btn
-            :disabled="!valid"
-            color="primary"
-            variant="elevated"
-            @click="save"
-          >
-            Сохранить
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="outlined"
-            @click="cancel"
-          >
-            Отмена
-          </v-btn>
+          <v-btn :disabled="!valid" color="primary" variant="elevated" @click="save">Сохранить</v-btn>
+          <v-btn color="primary" variant="outlined" @click="cancel">Отмена</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <confirm-dialog ref="deleteDialog" v-model="deleteDialogIsOpen" @handle-ok="deleteItem" />
   </v-container>
 </template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue';
+import { useCargoStore } from '@/store/cargoStore';
+import { useFetchData } from '@/composables/fetchData';
 import Rules from '@/api/rules';
-import { mapActions, mapState } from 'pinia';
-import { useStore } from '@/store/store.js';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
 import Hint from '@/components/Hint.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
-export default {
-  name: 'Cargo',
-  components: { Hint, ConfirmDialog },
-  data: () => ({
-    deleteDialogIsOpen: false,
-    rules: Rules,
-    loading: false,
-    valid: false,
-    isHidden: false,
-    data: [],
-    statuses: [],
-    headers: [
-      { title: 'ID', key: 'id' },
-      { title: 'Вес (кг)', key: 'weight' },
-      { title: 'Объем (м³)', key: 'volume' },
-      { title: 'Количество', key: 'quantity' },
-      { title: 'Дата прибытия', key: 'warehouseArrivalDate' },
-      { title: 'Дата отправки', key: 'shipmentDate' },
-      { title: 'Статус', key: 'status' },
-      { title: 'Описание', key: 'description' },
-      { title: 'Действие', key: 'actions', sortable: false, align: 'start' },
-    ],
-    formData: {},
-    dialog: false,
-  }),
-  computed: {
-    ...mapState(useStore, ['checkAccess']),
-  },
-  created() {
-    this.initialize();
-    this.loadStatuses();
-  },
-  methods: {
-    ...mapActions(useStore, ['addSuccessMessages', 'addErrorMessages']),
+const cargoStore = useCargoStore();
+const { fetchData } = useFetchData();
 
-    async loadStatuses() {
-      try {
-        const response = await this.$http.get('/enums/cargoStatuses');
-        this.statuses = response.data.map(status => ({
-          value: status.value,
-          description: status.description,
-        }));
-      } catch (error) {
-        this.addErrorMessages('Ошибка загрузки статусов');
-      }
-    },
+const dialog = ref(false);
+const deleteDialogIsOpen = ref(false);
+const formData = ref({});
+const valid = ref(false);
+const isHidden = ref(false);
+const statuses = ref([]);
+const selectedCargo = ref(null);
 
-    editedItem(item) {
-      this.formData = { ...item };
-      this.dialog = true;
-    },
+const headers = [
+  { title: 'ID', key: 'id' },
+  { title: 'Вес (кг)', key: 'weight' },
+  { title: 'Объем (м³)', key: 'volume' },
+  { title: 'Количество', key: 'quantity' },
+  { title: 'Дата прибытия', key: 'warehouseArrivalDate' },
+  { title: 'Дата отправки', key: 'shipmentDate' },
+  { title: 'Статус', key: 'status' },
+  { title: 'Описание', key: 'description' },
+  { title: 'Действие', key: 'actions', sortable: false, align: 'start' },
+];
 
-    async deleteItem(item) {
-      try {
-        await this.$http.delete(`/cargo/${item.id}`);
-        this.addSuccessMessages('Успешно удалено');
-        this.initialize();
-      } catch (error) {
-        this.addErrorMessages('Ошибка при удалении');
-      }
-    },
-
-    cancel() {
-      this.dialog = false;
-      this.formData = {};
-      this.initialize();
-    },
-
-    formatDateTime(value) {
-      if (!value) return null;
-      return new Date(value).toISOString();
-    },
-
-    async save() {
-      const payload = {
-        ...this.formData,
-        warehouseArrivalDate: this.formatDateTime(this.formData.warehouseArrivalDate),
-        shipmentDate: this.formatDateTime(this.formData.shipmentDate),
-      };
-
-      const method = this.formData.id ? 'put' : 'post';
-      try {
-        await this.$http[method]('/cargo', payload);
-        this.addSuccessMessages(this.formData.id ? 'Успешно обновлено' : 'Успешно добавлено');
-        this.dialog = false;
-        this.initialize();
-      } catch (error) {
-        this.addErrorMessages('Ошибка при сохранении');
-      }
-    },
-
-    async initialize() {
-      this.loading = true;
-      try {
-        const response = await this.$http.get('/cargo');
-        this.data = response.data;
-      } finally {
-        this.loading = false;
-      }
-    },
-  },
+const loadStatuses = async() => {
+  const [response, error] = await fetchData('/enums/cargoStatuses');
+  if (!error) {
+    statuses.value = response.map((status) => ({
+      value: status.value,
+      description: status.description,
+    }));
+  }
 };
+
+const formatDateTime = (value) => {
+  if (!value) return null;
+  return new Date(value).toISOString();
+};
+
+const openDialog = () => {
+  formData.value = {};
+  dialog.value = true;
+};
+
+const editItem = (item) => {
+  formData.value = { ...item };
+  dialog.value = true;
+};
+
+const confirmDelete = (item) => {
+  selectedCargo.value = item;
+  deleteDialogIsOpen.value = true;
+};
+
+const deleteItem = async() => {
+  if (selectedCargo.value) {
+    await cargoStore.deleteCargo(selectedCargo.value.id);
+    deleteDialogIsOpen.value = false;
+    selectedCargo.value = null;
+  }
+};
+
+const save = async() => {
+  const payload = {
+    ...formData.value,
+    warehouseArrivalDate: formatDateTime(formData.value.warehouseArrivalDate),
+    shipmentDate: formatDateTime(formData.value.shipmentDate),
+  };
+
+  if (formData.value.id) {
+    await cargoStore.updateCargo(payload);
+  } else {
+    await cargoStore.createCargo(payload);
+  }
+
+  dialog.value = false;
+};
+
+const cancel = () => {
+  dialog.value = false;
+  formData.value = {};
+};
+
+onMounted(() => {
+  cargoStore.fetchCargos();
+  loadStatuses();
+});
 </script>
