@@ -1,115 +1,38 @@
-<template>
-  <v-container fluid>
-    <data-table
-      :headers="headers"
-      :items="cargoStore.cargos"
-      :loading="cargoStore.loading"
-    >
-      <template #top-button>
-        <v-btn
-          v-show="!isHidden"
-          class="mx-2"
-          color="primary"
-          variant="elevated"
-          @click="openDialog"
-        >
-          Добавить
-        </v-btn>
-      </template>
-      <template #item.actions="{ item }">
-        <div class="text-left d-flex ga-2">
-          <hint msg="Редактировать">
-            <v-btn
-              v-show="!isHidden"
-              class="mx-2"
-              color="primary"
-              variant="text"
-              size="x-small"
-              icon="edit"
-              @click="editItem(item)"
-            />
-          </hint>
-          <hint msg="Удалить">
-            <v-btn
-              v-show="!isHidden"
-              class="mx-2"
-              color="primary"
-              variant="text"
-              size="x-small"
-              icon="delete"
-              @click="confirmDelete(item)"
-            />
-          </hint>
-        </div>
-      </template>
-    </data-table>
-
-    <v-dialog v-model="dialog" persistent max-width="600">
-      <v-card>
-        <v-card-title>
-          <v-spacer />
-          <span class="headline">{{ formData.id ? 'Редактировать' : 'Добавить' }}</span>
-          <v-spacer />
-        </v-card-title>
-
-        <v-card-text class="py-4">
-          <v-form v-model="valid">
-            <v-row>
-              <v-col cols="12">
-                <v-text-field v-model="formData.weight" label="Вес (кг)" type="number" :rules="[rules.required]" />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field v-model="formData.volume" label="Объем (м³)" type="number" :rules="[rules.required]" />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field v-model="formData.quantity" label="Количество" type="number" :rules="[rules.required]" />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field v-model="formData.warehouseArrivalDate" label="Дата прибытия" type="datetime-local" />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field v-model="formData.shipmentDate" label="Дата отправки" type="datetime-local" />
-              </v-col>
-              <v-col cols="12">
-                <v-select v-model="formData.status" :items="statuses" item-title="description" item-value="value" label="Статус" :rules="[rules.required]" />
-              </v-col>
-              <v-col cols="12">
-                <v-text-field v-model="formData.description" label="Описание" />
-              </v-col>
-            </v-row>
-          </v-form>
-        </v-card-text>
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn :disabled="!valid" color="primary" variant="elevated" @click="save">Сохранить</v-btn>
-          <v-btn color="primary" variant="outlined" @click="cancel">Отмена</v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-
-    <confirm-dialog ref="deleteDialog" v-model="deleteDialogIsOpen" @handle-ok="deleteItem" />
-  </v-container>
-</template>
-
-<script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useCargoStore } from '@/store/cargoStore';
-import { useFetchData } from '@/composables/fetchData';
-import Rules from '@/api/rules';
-import Hint from '@/components/Hint.vue';
-import ConfirmDialog from '@/components/ConfirmDialog.vue';
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
+import { useCargoStore } from '@/stores/cargo';
+import { useAppStore } from '@/stores/app';
+import { storeToRefs } from 'pinia';
+import CargoModal from '@/components/CargoModal.vue';
+import Rules from '@/utils/rules';
 
 const cargoStore = useCargoStore();
-const { fetchData } = useFetchData();
+const appStore = useAppStore();
+const { cargos, statuses } = storeToRefs(cargoStore);
 
-const dialog = ref(false);
-const deleteDialogIsOpen = ref(false);
-const formData = ref({});
-const valid = ref(false);
-const isHidden = ref(false);
-const statuses = ref([]);
-const selectedCargo = ref(null);
+const loading = ref(false);
+const cargoDialog = ref(false);
+const isEditing = ref(false);
+const selectedCargoId = ref<number | null>(null);
+
+interface CargoForm {
+  id?: number;
+  weight: number;
+  volume: number;
+  quantity: number;
+  warehouseArrivalDate?: string;
+  shipmentDate?: string;
+  status: string;
+  description?: string;
+}
+
+const newCargo = ref<CargoForm>({
+  weight: 0,
+  volume: 0,
+  quantity: 1,
+  status: '',
+  description: '',
+});
 
 const headers = [
   { title: 'ID', key: 'id' },
@@ -118,72 +41,147 @@ const headers = [
   { title: 'Количество', key: 'quantity' },
   { title: 'Дата прибытия', key: 'warehouseArrivalDate' },
   { title: 'Дата отправки', key: 'shipmentDate' },
-  { title: 'Статус', key: 'status' },
+  { title: 'Статус', key: 'status.description' },
   { title: 'Описание', key: 'description' },
-  { title: 'Действие', key: 'actions', sortable: false, align: 'start' },
+  { title: 'Действия', key: 'actions' },
 ];
 
-const loadStatuses = async() => {
-  const [response, error] = await fetchData('/enums/cargoStatuses');
-  if (!error) {
-    statuses.value = response.map((status) => ({
-      value: status.value,
-      description: status.description,
-    }));
+const getCargos = async(): Promise<void> => {
+  loading.value = true;
+  try {
+    await cargoStore.fetchCargos();
+    await cargoStore.fetchStatuses();
+  } catch (error) {
+    console.error('Ошибка загрузки грузов:', error);
+  } finally {
+    loading.value = false;
   }
 };
 
-const formatDateTime = (value) => {
-  if (!value) return null;
-  return new Date(value).toISOString();
+const deleteCargo = async(id: number) => {
+  await cargoStore.deleteCargo(id);
+  await getCargos();
 };
 
-const openDialog = () => {
-  formData.value = {};
-  dialog.value = true;
-};
+const prepareCargoData = (cargo) => ({
+  ...cargo,
+  warehouseArrivalDate: cargo.warehouseArrivalDate
+    ? new Date(cargo.warehouseArrivalDate).toISOString()
+    : null,
+  shipmentDate: cargo.shipmentDate
+    ? new Date(cargo.shipmentDate).toISOString()
+    : null,
+});
 
-const editItem = (item) => {
-  formData.value = { ...item };
-  dialog.value = true;
-};
+const saveCargo = async(): Promise<void> => {
+  try {
 
-const confirmDelete = (item) => {
-  selectedCargo.value = item;
-  deleteDialogIsOpen.value = true;
-};
+    const preparedCargo = prepareCargoData(newCargo.value);
 
-const deleteItem = async() => {
-  if (selectedCargo.value) {
-    await cargoStore.deleteCargo(selectedCargo.value.id);
-    deleteDialogIsOpen.value = false;
-    selectedCargo.value = null;
+    newCargo.value.status = typeof newCargo.value.status === 'object'
+      ? newCargo.value.status.value
+      : newCargo.value.status;
+
+    if (isEditing.value) {
+      await cargoStore.updateCargo(preparedCargo);
+    } else {
+      await cargoStore.createCargo(preparedCargo);
+    }
+    closeCargoModal();
+    await getCargos();
+  } catch (error) {
+    console.error('Ошибка сохранения груза:', error);
   }
 };
 
-const save = async() => {
-  const payload = {
-    ...formData.value,
-    warehouseArrivalDate: formatDateTime(formData.value.warehouseArrivalDate),
-    shipmentDate: formatDateTime(formData.value.shipmentDate),
+const editCargo = (id: number): void => {
+  const cargo = cargos.value.find(c => c.id === id);
+  if (cargo) {
+    newCargo.value = { ...cargo };
+    isEditing.value = true;
+    cargoDialog.value = true;
+  }
+};
+
+const closeCargoModal = () => {
+  newCargo.value = {
+    weight: 0,
+    volume: 0,
+    quantity: 1,
+    status: '',
+    description: '',
   };
-
-  if (formData.value.id) {
-    await cargoStore.updateCargo(payload);
-  } else {
-    await cargoStore.createCargo(payload);
-  }
-
-  dialog.value = false;
+  selectedCargoId.value = null;
+  cargoDialog.value = false;
+  isEditing.value = false;
 };
 
-const cancel = () => {
-  dialog.value = false;
-  formData.value = {};
+const openCreateCargoModal = (): void => {
+  newCargo.value = {
+    weight: 0,
+    volume: 0,
+    quantity: 0,
+    warehouseArrivalDate: '',
+    shipmentDate: '',
+    status: statuses.value.length ? statuses.value[0].value : '',
+    description: '',
+  };
+  isEditing.value = false;
+  cargoDialog.value = true;
 };
 
-onMounted(() => {
-  cargoStore.fetchCargos();
-  loadStatuses();
+const canUpdate = computed(() => appStore.checkAccess('cargo', 'update'));
+const canDelete = computed(() => appStore.checkAccess('cargo', 'delete'));
+const canCreate = computed(() => appStore.checkAccess('cargo', 'create'));
+
+onMounted(async() => {
+  await getCargos();
 });
 </script>
+
+<template>
+  <v-container>
+    <CargoModal
+      v-model:dialog="cargoDialog"
+      :title="isEditing ? 'Редактировать груз' : 'Добавить груз'"
+      :confirm-text="isEditing ? 'Сохранить' : 'Создать'"
+      @confirm="saveCargo"
+      @close="closeCargoModal"
+    >
+      <form>
+        <v-text-field v-model="newCargo.weight" :rules="Rules.required" label="Вес (кг)" type="number" />
+        <v-text-field v-model="newCargo.volume" :rules="Rules.required" label="Объем (м³)" type="number" />
+        <v-text-field v-model="newCargo.quantity" :rules="Rules.required" label="Количество" type="number" />
+        <v-text-field v-model="newCargo.warehouseArrivalDate" label="Дата прибытия" type="datetime-local" />
+        <v-text-field v-model="newCargo.shipmentDate" label="Дата отправки" type="datetime-local" />
+        <v-select
+          v-model="newCargo.status"
+          :items="statuses"
+          item-title="description"
+          item-value="value"
+          label="Статус"
+        />
+        <v-text-field v-model="newCargo.description" label="Описание" />
+      </form>
+    </CargoModal>
+
+    {{ newCargo.status }}
+
+    <v-card>
+      <v-card-title class="d-flex align-center justify-space-between">
+        Список грузов
+        <v-btn v-if="canCreate" color="primary" @click="openCreateCargoModal">
+          Добавить груз
+        </v-btn>
+      </v-card-title>
+
+      <v-data-table :headers="headers" :items="cargos" :loading="loading" item-value="id">
+        <template #item.actions="{ item }">
+          <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editCargo(item.id)">
+            Редактировать
+          </v-btn>
+        </template>
+      </v-data-table>
+    </v-card>
+  </v-container>
+</template>
