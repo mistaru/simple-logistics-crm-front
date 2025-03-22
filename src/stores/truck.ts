@@ -75,12 +75,16 @@ export const useTruckStore = defineStore('truck', {
     },
 
     async deleteTruck(id: number) {
-      try {
-        await axios.delete(`/truck/${id}`);
-        await this.fetchTrucks();
-      } catch (error) {
+      const [_, error] = await fetchData(`/truck/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (error) {
         console.error('Ошибка удаления грузовика:', error);
+        return;
       }
+
+      this.trucks = this.trucks.filter(c => c.id !== id);
     },
   },
 });
