@@ -28,6 +28,7 @@ interface TruckForm {
   arrivalDatePlanned: Date;
   arrivalDateActual: Date;
   additionalInformation?: string;
+  // availableVolume: number;
 }
 
 const newTruck = ref<TruckForm>({
@@ -44,6 +45,7 @@ const newTruck = ref<TruckForm>({
   arrivalDatePlanned: new Date(),
   arrivalDateActual: new Date(),
   additionalInformation: '',
+  // availableVolume: 0,
 });
 
 const headers = [
@@ -86,10 +88,17 @@ const deleteTruck = async(id: number) => {
 
 const saveTruck = async(): Promise<void> => {
   try {
+    const payload = {
+      ...newTruck.value,
+      departureDatePlanned: formatDateTime(newTruck.value.departureDatePlanned),
+      departureDateActual: formatDateTime(newTruck.value.departureDateActual),
+      arrivalDatePlanned: formatDateTime(newTruck.value.arrivalDatePlanned),
+      arrivalDateActual: formatDateTime(newTruck.value.arrivalDateActual),
+    };
     if (isEditing.value) {
-      await truckStore.updateTruck({ ...newTruck.value });
+      await truckStore.updateTruck(payload);
     } else {
-      await truckStore.createTruck({ ...newTruck.value });
+      await truckStore.createTruck(payload);
     }
     closeTruckModal();
     await getTrucks();
@@ -107,6 +116,17 @@ const editTruck = (id: number): void => {
   }
 };
 
+// const availableVolume = computed(() => {
+//   return newTruck.value.volumeTotalM3 - newTruck.value.volumeOccupiedM3;
+// });
+//
+// const trucksWithAvailableVolume = computed(() => {
+//   return trucks.value.map(truck => ({
+//     ...truck,
+//     availableVolume: truck.volumeTotalM3 - truck.volumeOccupiedM3,
+//   }));
+// });
+
 const closeTruckModal = (): void => {
   newTruck.value = {
     registrationCountry: '',
@@ -122,6 +142,7 @@ const closeTruckModal = (): void => {
     arrivalDatePlanned: new Date(),
     arrivalDateActual: new Date(),
     additionalInformation: '',
+    //availableVolume: 0,
   };
   truckDialog.value = false;
   isEditing.value = false;
@@ -142,9 +163,15 @@ const openCreateTruckModal = (): void => {
     arrivalDatePlanned: new Date(),
     arrivalDateActual: new Date(),
     additionalInformation: '',
+    //availableVolume: 0,
   };
   isEditing.value = false;
   truckDialog.value = true;
+};
+
+const formatDateTime = (value) => {
+  if (!value) return null;
+  return new Date(value).toISOString();
 };
 
 const canUpdate = computed(() => appStore.checkAccess('truck', 'update'));
@@ -159,7 +186,7 @@ onMounted(getTrucks);
     <!-- Модальное окно для создания/редактирования -->
     <TruckModal
       v-model:dialog="truckDialog"
-      :title="isEditing ? 'Редактировать трак' : 'Добавить трак'"
+      :title="isEditing ? 'Редактировать фуру' : 'Добавить фуру'"
       :confirm-text="isEditing ? 'Сохранить' : 'Создать'"
       @confirm="saveTruck"
       @close="closeTruckModal"
@@ -173,10 +200,10 @@ onMounted(getTrucks);
         <v-text-field v-model="newTruck.arrivalWarehouse" label="Склад доставки" required />
         <v-text-field v-model="newTruck.driverFullname" label="ФИО водителя" required />
         <v-text-field v-model="newTruck.driverPhone" label="Телефон водителя" required />
-        <v-text-field v-model="newTruck.departureDatePlanned" label="Планируемая дата отправки" type="date" required />
-        <v-text-field v-model="newTruck.departureDateActual" label="Фактическая дата отправки" type="date" required />
-        <v-text-field v-model="newTruck.arrivalDatePlanned" label="Планируемая дата доставка" type="date" required />
-        <v-text-field v-model="newTruck.arrivalDateActual" label="Фактическая дата доставки" type="date" required />
+        <v-text-field v-model="newTruck.departureDatePlanned" label="Планируемая дата отправки" type="datetime-local" required />
+        <v-text-field v-model="newTruck.departureDateActual" label="Фактическая дата отправки" type="datetime-local" required />
+        <v-text-field v-model="newTruck.arrivalDatePlanned" label="Планируемая дата доставки" type="datetime-local" required />
+        <v-text-field v-model="newTruck.arrivalDateActual" label="Фактическая дата доставки" type="datetime-local" required />
         <v-text-field v-model="newTruck.additionalInformation" label="Доп. информация" />
       </v-form>
     </TruckModal>
@@ -184,14 +211,17 @@ onMounted(getTrucks);
     <!-- Таблица с траками -->
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between">
-        Список траков
+        Список фур
         <v-btn v-if="canCreate" color="primary" @click="openCreateTruckModal">
-          Добавить трак
+          Добавить фуру
         </v-btn>
       </v-card-title>
 
       <v-data-table :headers="headers" :items="trucks" :loading="loading" item-value="id">
         <template #item.actions="{ item }">
+          <v-btn v-if="canDelete" color="red" size="small" @click="deleteTruck(item.id)">
+            Удалить
+          </v-btn>
           <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editTruck(item.id)">
             Редактировать
           </v-btn>
