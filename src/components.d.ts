@@ -7,7 +7,10 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    CityModal: typeof import('./components/CityModal.vue')['default']
+    ClientModal: typeof import('./components/ClientModal.vue')['default']
     ConfirmDialog: typeof import('./components/ConfirmDialog.vue')['default']
+    CountryModal: typeof import('./components/CountryModal.vue')['default']
     DataTable: typeof import('./components/DataTable.vue')['default']
     DetailsDialog: typeof import('./components/DetailsDialog.vue')['default']
     Hint: typeof import('./components/Hint.vue')['default']
@@ -18,6 +21,8 @@ declare module 'vue' {
     Search: typeof import('./components/Search.vue')['default']
     TableFilterForm: typeof import('./components/TableFilterForm.vue')['default']
     ToggleTheme: typeof import('./components/ui/ToggleTheme.vue')['default']
+    TruckModal: typeof import('./components/TruckModal.vue')['default']
     UserModal: typeof import('./components/UserModal.vue')['default']
+    WarehouseModal: typeof import('./components/WarehouseModal.vue')['default']
   }
 }
