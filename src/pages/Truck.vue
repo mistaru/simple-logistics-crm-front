@@ -43,7 +43,7 @@ const headers = [
   { title: 'Действия', key: 'actions', sortable: false },
 ];
 
-const getTrucks = async (): Promise<void> => {
+const getTrucks = async(): Promise<void> => {
   loading.value = true;
   try {
     await truckStore.fetchTrucks();
@@ -150,9 +150,6 @@ onMounted(getTrucks);
 
       <v-data-table :headers="headers" :items="trucks" :loading="loading" item-value="id">
         <template #item.actions="{ item }">
-          <v-btn v-if="canDelete" color="red" size="small" @click="deleteTruck(item.id)">
-            Удалить
-          </v-btn>
           <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editTruck(item.id)">
             Редактировать
           </v-btn>
