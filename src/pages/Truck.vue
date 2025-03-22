@@ -39,10 +39,10 @@ const newTruck = ref<TruckForm>({
   arrivalWarehouse: '',
   driverFullname: '',
   driverPhone: '',
-  departureDatePlanned: new Date(),
-  departureDateActual: new Date(),
-  arrivalDatePlanned: new Date(),
-  arrivalDateActual: new Date(),
+  departureDatePlanned: null,
+  departureDateActual: null,
+  arrivalDatePlanned: null,
+  arrivalDateActual: null,
   additionalInformation: '',
 });
 
@@ -117,10 +117,10 @@ const closeTruckModal = (): void => {
     arrivalWarehouse: '',
     driverFullname: '',
     driverPhone: '',
-    departureDatePlanned: new Date(),
-    departureDateActual: new Date(),
-    arrivalDatePlanned: new Date(),
-    arrivalDateActual: new Date(),
+    departureDatePlanned: null,
+    departureDateActual: null,
+    arrivalDatePlanned: null,
+    arrivalDateActual: null,
     additionalInformation: '',
   };
   truckDialog.value = false;
@@ -137,10 +137,10 @@ const openCreateTruckModal = (): void => {
     arrivalWarehouse: '',
     driverFullname: '',
     driverPhone: '',
-    departureDatePlanned: new Date(),
-    departureDateActual: new Date(),
-    arrivalDatePlanned: new Date(),
-    arrivalDateActual: new Date(),
+    departureDatePlanned: null,
+    departureDateActual: null,
+    arrivalDatePlanned: null,
+    arrivalDateActual: null,
     additionalInformation: '',
   };
   isEditing.value = false;
@@ -192,6 +192,9 @@ onMounted(getTrucks);
 
       <v-data-table :headers="headers" :items="trucks" :loading="loading" item-value="id">
         <template #item.actions="{ item }">
+          <v-btn v-if="canDelete" color="red" size="small" @click="deleteTruck(item.id)">
+            Удалить
+          </v-btn>
           <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editTruck(item.id)">
             Редактировать
           </v-btn>
