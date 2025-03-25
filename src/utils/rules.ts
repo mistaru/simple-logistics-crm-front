@@ -1,4 +1,6 @@
 const Rules = {
+  required: (v: string) => !!v || 'Необходимо заполнить',
+
   phone: (v: string) =>
     v && /^(996)(\d{9})$/.test(v) ||
     'Неверный формат телефона (996XXXXXXXXX) ' +

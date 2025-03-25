@@ -17,6 +17,7 @@ const clientDialog = ref(false);
 interface ClientForm {
   id?: number;
   fullName: string;
+  clientCode: string;
   phoneNumber: string;
   whatsappNumber: string;
   email: string;
@@ -25,6 +26,7 @@ interface ClientForm {
 
 const newClient = ref<ClientForm>({
   fullName: '',
+  clientCode: '',
   phoneNumber: '',
   whatsappNumber: '',
   email: '',
@@ -34,6 +36,7 @@ const newClient = ref<ClientForm>({
 const headers = [
   { title: 'ID', key: 'id' },
   { title: 'ФИО', key: 'fullName' },
+  { title: 'Код клиента', key: 'clientCode' },
   { title: 'Телефон', key: 'phoneNumber' },
   { title: 'Whatsapp', key: 'whatsappNumber' },
   { title: 'Email', key: 'email' },
@@ -88,6 +91,7 @@ const editClient = (id: number): void => {
 const closeClientModal = (): void => {
   newClient.value = {
     fullName: '',
+    clientCode: '',
     phoneNumber: '',
     whatsappNumber: '',
     email: '',
@@ -100,6 +104,7 @@ const closeClientModal = (): void => {
 const openCreateClientModal = (): void => {
   newClient.value = {
     fullName: '',
+    clientCode: '',
     phoneNumber: '',
     whatsappNumber: '',
     email: '',
@@ -127,6 +132,7 @@ onMounted(getClients);
     >
       <form>
         <v-text-field v-model="newClient.fullName" :rules="Rules.required" label="ФИО" />
+        <v-text-field v-model="newClient.clientCode" :rules="Rules.required" label="Код клиента" />
         <v-text-field v-model="newClient.phoneNumber" :rules="Rules.required" label="Телефон" />
         <v-text-field v-model="newClient.whatsappNumber" label="Whatsapp" />
         <v-text-field v-model="newClient.email" label="Email" />
