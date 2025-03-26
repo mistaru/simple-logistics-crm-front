@@ -1,3 +1,5 @@
+const required = [(v: string) => !!v || 'Необходимо заполнить'];
+
 const Rules = {
   required: (v: string) => !!v || 'Необходимо заполнить',
 
@@ -24,4 +26,8 @@ const Rules = {
   ],
 };
 
-export default Rules;
+export default {
+  required,
+  Rules
+};
+

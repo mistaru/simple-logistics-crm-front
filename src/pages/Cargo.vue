@@ -8,7 +8,7 @@ import Rules from '@/utils/rules';
 
 const cargoStore = useCargoStore();
 const appStore = useAppStore();
-const { cargos, statuses } = storeToRefs(cargoStore);
+const { cargos, statuses, clients } = storeToRefs(cargoStore);
 
 const loading = ref(false);
 const cargoDialog = ref(false);
@@ -23,6 +23,7 @@ interface CargoForm {
   warehouseArrivalDate?: string;
   shipmentDate?: string;
   status: string;
+  client: string;
   description?: string;
 }
 
@@ -31,6 +32,7 @@ const newCargo = ref<CargoForm>({
   volume: 0,
   quantity: 1,
   status: '',
+  client: '',
   description: '',
 });
 
@@ -42,6 +44,7 @@ const headers = [
   { title: 'Дата прибытия', key: 'warehouseArrivalDate' },
   { title: 'Дата отправки', key: 'shipmentDate' },
   { title: 'Статус', key: 'status.description' },
+  { title: 'Клиент', key: 'client.fullName' },
   { title: 'Описание', key: 'description' },
   { title: 'Действия', key: 'actions' },
 ];
@@ -51,6 +54,7 @@ const getCargos = async(): Promise<void> => {
   try {
     await cargoStore.fetchCargos();
     await cargoStore.fetchStatuses();
+    await cargoStore.fetchClients();
   } catch (error) {
     console.error('Ошибка загрузки грузов:', error);
   } finally {
@@ -71,6 +75,8 @@ const prepareCargoData = (cargo) => ({
   shipmentDate: cargo.shipmentDate
     ? new Date(cargo.shipmentDate).toISOString()
     : null,
+  client: { id: cargo.client },
+
 });
 
 const saveCargo = async(): Promise<void> => {
@@ -109,6 +115,7 @@ const closeCargoModal = () => {
     volume: 0,
     quantity: 1,
     status: '',
+    client: '',
     description: '',
   };
   selectedCargoId.value = null;
@@ -124,6 +131,7 @@ const openCreateCargoModal = (): void => {
     warehouseArrivalDate: '',
     shipmentDate: '',
     status: statuses.value.length ? statuses.value[0].value : '',
+    client: '',
     description: '',
   };
   isEditing.value = false;
@@ -161,11 +169,16 @@ onMounted(async() => {
           item-value="value"
           label="Статус"
         />
+        <v-select
+          v-model="newCargo.client"
+          :items="clients"
+          item-title="fullName"
+          item-value="id"
+          label="Клиент"
+        />
         <v-text-field v-model="newCargo.description" label="Описание" />
       </form>
     </CargoModal>
-
-    {{ newCargo.status }}
 
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between">
