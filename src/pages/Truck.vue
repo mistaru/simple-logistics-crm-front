@@ -28,6 +28,7 @@ interface TruckForm {
   arrivalDatePlanned: Date;
   arrivalDateActual: Date;
   additionalInformation?: string;
+  serviceFee: number;
   // availableVolume: number;
 }
 
@@ -45,6 +46,7 @@ const newTruck = ref<TruckForm>({
   arrivalDatePlanned: new Date(),
   arrivalDateActual: new Date(),
   additionalInformation: '',
+  serviceFee: 0,
   // availableVolume: 0,
 });
 
@@ -63,6 +65,7 @@ const headers = [
   { title: 'Планируемая дата доставки', key: 'arrivalDatePlanned' },
   { title: 'Фактическая дата доставки', key: 'arrivalDateActual' },
   { title: 'Доп. информация', key: 'additionalInformation' },
+  { title: 'Цена', key: 'serviceFee' },
   { title: 'Действия', key: 'actions', sortable: false },
 ];
 
@@ -142,6 +145,7 @@ const closeTruckModal = (): void => {
     arrivalDatePlanned: new Date(),
     arrivalDateActual: new Date(),
     additionalInformation: '',
+    serviceFee: 0,
     //availableVolume: 0,
   };
   truckDialog.value = false;
@@ -163,6 +167,7 @@ const openCreateTruckModal = (): void => {
     arrivalDatePlanned: new Date(),
     arrivalDateActual: new Date(),
     additionalInformation: '',
+    serviceFee: 0,
     //availableVolume: 0,
   };
   isEditing.value = false;
@@ -205,6 +210,7 @@ onMounted(getTrucks);
         <v-text-field v-model="newTruck.arrivalDatePlanned" label="Планируемая дата доставки" type="datetime-local" required />
         <v-text-field v-model="newTruck.arrivalDateActual" label="Фактическая дата доставки" type="datetime-local" required />
         <v-text-field v-model="newTruck.additionalInformation" label="Доп. информация" />
+        <v-text-field v-model="newTruck.serviceFee" label="Цена" type="number" required />
       </v-form>
     </TruckModal>
 
