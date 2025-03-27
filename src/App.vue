@@ -124,7 +124,7 @@ if (!isLoginPage.value) {
           @click="rail = false"
         >
           <v-list-item
-            title="Administrator"
+            title="Панель управления"
             nav
           >
             <template #append>
@@ -177,7 +177,7 @@ if (!isLoginPage.value) {
         </v-navigation-drawer>
 
         <v-app-bar class="app-header">
-          <v-toolbar-title>Admin</v-toolbar-title>
+          <v-toolbar-title>Пользователь</v-toolbar-title>
           <toggle-theme />
           <template #append>
             <v-btn

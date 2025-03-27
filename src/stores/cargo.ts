@@ -11,6 +11,7 @@ interface Cargo {
   quantity: number;
   warehouseArrivalDate?: string;
   shipmentDate?: string;
+  client: string;
   status: string;
   description?: string;
 }
@@ -20,15 +21,27 @@ interface CargoStatus {
   description: string;
 }
 
+interface Client {
+  id: number;
+  fullName: string;
+  clientCode: string;
+  phoneNumber: string;
+  whatsappNumber: string;
+  email: string;
+  additionalInfo: string;
+}
+
 class State {
   cargos: Cargo[] = [];
   statuses: CargoStatus[] = [];
+  clients: Client[] = [];
 }
 
 export const useCargoStore = defineStore('cargo', {
   state: (): State => ({
     cargos: [],
     statuses: [],
+    clients: [],
   }),
   actions: {
     async fetchCargos() {
@@ -48,6 +61,16 @@ export const useCargoStore = defineStore('cargo', {
         return [];
       }
       this.statuses = response.sort((a: CargoStatus, b: CargoStatus) => a.id - b.id);
+      return response;
+    },
+
+    async fetchClients() {
+      const [response, error] = await fetchData('/client/all');
+      if (error) {
+        console.error('Ошибка при загрузке клиентов:', error);
+        return [];
+      }
+      this.clients = response.sort((a: Client, b: Client) => a.id - b.id);
       return response;
     },
 

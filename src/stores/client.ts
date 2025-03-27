@@ -7,6 +7,7 @@ const appStore = useAppStore();
 interface Client {
   id: number;
   fullName: string;
+  clientCode: string;
   phoneNumber: string;
   whatsappNumber: string;
   email: string;
