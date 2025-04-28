@@ -100,6 +100,16 @@ const openCreateUserModal = (): void => {
   userDialog.value = true;
 };
 
+const confirmDeleteUser = async(id: number): Promise<void> => {
+  const user = users.value.find(u => u.id === id);
+  if (user) {
+    const confirmDelete = confirm(`Вы уверены, что хотите удалить пользователя ${user.username}?`);
+    if (confirmDelete) {
+      await deleteUser(id);
+    }
+  }
+};
+
 const canUpdate = computed(() => appStore.checkAccess('auth', 'update'));
 const canDelete = computed(() => appStore.checkAccess('auth', 'delete'));
 const canCreate = computed(() => appStore.checkAccess('auth', 'create'));
@@ -199,7 +209,7 @@ onMounted(getUsers);
             v-if="canDelete"
             color="red"
             size="small"
-            @click="deleteUser(item.id)"
+            @click="confirmDeleteUser(item.id)"
           >
             Удалить
           </v-btn>
