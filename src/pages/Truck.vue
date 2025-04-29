@@ -101,6 +101,8 @@ const saveTruck = async(): Promise<void> => {
     if (isEditing.value) {
       await truckStore.updateTruck(payload);
     } else {
+      payload.volumeOccupiedM3 = 0;
+      payload.volumeAvailableM3 = payload.volumeTotalM3;
       await truckStore.createTruck(payload);
     }
     closeTruckModal();
@@ -199,8 +201,8 @@ onMounted(getTrucks);
       <v-form>
         <v-text-field v-model="newTruck.registrationCountry" label="Страна регистрации" required />
         <v-text-field v-model="newTruck.volumeTotalM3" label="Объем общий (м3)" type="number" required />
-        <v-text-field v-model="newTruck.volumeOccupiedM3" label="Объем занятый (м3)" type="number" required />
-        <v-text-field v-model="newTruck.volumeAvailableM3" label="Объем доступный (м3)" type="number" required />
+        <v-text-field v-model="newTruck.volumeOccupiedM3" label="Объем занятый (м3)" type="number" readonly />
+        <v-text-field v-model="newTruck.volumeAvailableM3" label="Объем доступный (м3)" type="number" readonly />
         <v-text-field v-model="newTruck.departureWarehouse" label="Склад отправки" required />
         <v-text-field v-model="newTruck.arrivalWarehouse" label="Склад доставки" required />
         <v-text-field v-model="newTruck.driverFullname" label="ФИО водителя" required />

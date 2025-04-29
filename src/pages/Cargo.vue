@@ -75,7 +75,7 @@ const prepareCargoData = (cargo) => ({
   shipmentDate: cargo.shipmentDate
     ? new Date(cargo.shipmentDate).toISOString()
     : null,
-  client: { id: cargo.client },
+  client: cargo.client ? { id: cargo.client } : null,
 
 });
 
