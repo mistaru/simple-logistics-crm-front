@@ -75,6 +75,8 @@ const getUnassignedCargos = async(): Promise<void> => {
     await cargoTruckStore.fetchUnassignedCargos();
   } catch (error) {
     console.error('Ошибка загрузки не назначенных грузов:', error);
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -82,6 +84,7 @@ const assignCargoToTruck = async(cargoId: number, truckId: number): Promise<void
   try {
     await cargoTruckStore.assignCargoToTruck(cargoId, truckId);
     getCargosByTruck(truckId);
+    getUnassignedCargos();
   } catch (error) {
     console.error('Ошибка привязки груза к траку:', error);
   }
@@ -89,8 +92,10 @@ const assignCargoToTruck = async(cargoId: number, truckId: number): Promise<void
 
 const unassignCargoFromTruck = async(cargoId: number, truckId: number): Promise<void> => {
   try {
+    console.log('cargoId: ' + cargoId + ', truckId: ' + truckId);
     await cargoTruckStore.unassignCargoFromTruck(cargoId, truckId);
     getCargosByTruck(truckId);
+    getUnassignedCargos();
   } catch (error) {
     console.error('Ошибка отвязки груза от трака:', error);
   }
@@ -103,7 +108,10 @@ const availableCargos = computed(() => {
   );
 });
 
-onMounted(getCargoTrucksAll, getUnassignedCargos);
+onMounted(() => {
+  getCargoTrucksAll();
+  getUnassignedCargos();
+});
 // onMounted(getTrucks); TODO: return later
 </script>
 

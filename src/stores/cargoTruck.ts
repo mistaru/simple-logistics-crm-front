@@ -66,17 +66,17 @@ export const useCargoTruckStore = defineStore('cargoTruck', {
     },
     async assignCargoToTruck(cargoId, truckId) {
       //const { fetchData } = useFetchData();
-      const [, error] = await fetchData('/cargo-truck/assign', 'post', { cargoId, truckId });
+      const [, error] = await fetchData(`/cargo-truck/assign?cargoId=${cargoId}&truckId=${truckId}`, { method: 'POST' });
       if (error) {
-        console.error('Ошибка привязки груза к траку:', error);
+        console.error('Ошибка привязки груза с id: ' + cargoId + ' к траку с id: ' + truckId, error);
       }
     },
 
     async unassignCargoFromTruck(cargoId, truckId) {
       //const { fetchData } = useFetchData();
-      const [, error] = await fetchData('/cargo-truck/unassign', 'post', { cargoId, truckId });
+      const [, error] = await fetchData(`/cargo-truck/unassign?cargoId=${cargoId}&truckId=${truckId}`, { method: 'POST' });
       if (error) {
-        console.error('Ошибка отвязки груза от трака:', error);
+        console.error('Ошибка отвязки груза с id: ' + cargoId + ' от трака с id: ' + truckId, error);
       }
     },
   },
