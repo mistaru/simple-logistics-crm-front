@@ -81,12 +81,25 @@ const getUnassignedCargos = async(): Promise<void> => {
 };
 
 const assignCargoToTruck = async(cargoId: number, truckId: number): Promise<void> => {
-  try {
-    await cargoTruckStore.assignCargoToTruck(cargoId, truckId);
-    getCargosByTruck(truckId);
-    getUnassignedCargos();
-  } catch (error) {
-    console.error('Ошибка привязки груза к траку:', error);
+  const truck = cargoTrucks.value.find(ct => ct.truck.id === truckId)?.truck;
+  const cargo = unassignedCargos.value.find(c => c.id === cargoId);
+  if (!truck || !cargo) {
+    console.error('Трак или груз не найдены');
+    return;
+  }
+  const totalCargoVolumeM3 = cargo.volume * cargo.quantity;
+  const truckOccupiedVolumeM3 = truck.volumeOccupiedM3;
+  if (truckOccupiedVolumeM3 + totalCargoVolumeM3 <= truck.volumeTotalM3) {
+    try {
+      await cargoTruckStore.assignCargoToTruck(cargoId, truckId);
+      await getCargoTrucksAll();
+      await getCargosByTruck(truckId);
+      await getUnassignedCargos();
+    } catch (error) {
+      console.error('Ошибка привязки груза к траку:', error);
+    }
+  } else {
+    alert('Недостаточно места в траке!');
   }
 };
 
@@ -94,8 +107,9 @@ const unassignCargoFromTruck = async(cargoId: number, truckId: number): Promise<
   try {
     console.log('cargoId: ' + cargoId + ', truckId: ' + truckId);
     await cargoTruckStore.unassignCargoFromTruck(cargoId, truckId);
-    getCargosByTruck(truckId);
-    getUnassignedCargos();
+    await getCargoTrucksAll();
+    await getCargosByTruck(truckId);
+    await getUnassignedCargos();
   } catch (error) {
     console.error('Ошибка отвязки груза от трака:', error);
   }
