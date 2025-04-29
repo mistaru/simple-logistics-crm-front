@@ -2,18 +2,25 @@
 import { ref, computed, onMounted } from 'vue';
 import { useUsersStore } from '@/stores/permissions';
 import { useAppStore } from '@/stores/app';
+import { useCargoStore } from '@/stores/cargo';
 import { storeToRefs } from 'pinia';
 import ModalDialog from '@/components/UserModal.vue';
 import Rules from '@/utils/rules';
 
 const usersStore = useUsersStore();
 const appStore = useAppStore();
+const cargoStore = useCargoStore();
 const { users, roles } = storeToRefs(usersStore);
 
 const userDialog = ref(false);
 const loading = ref(false);
 const isEditing = ref(false);
 const showPassword = ref(false);
+
+const reassignDialog = ref(false);
+const toReassignUser = ref<number | null>(null);
+const fromReassignUser = ref<number | null>(null);
+const usersList = ref([]);
 
 interface UserForm {
   id?: number
@@ -103,9 +110,45 @@ const openCreateUserModal = (): void => {
 const confirmDeleteUser = async(id: number): Promise<void> => {
   const user = users.value.find(u => u.id === id);
   if (user) {
-    const confirmDelete = confirm(`Вы уверены, что хотите удалить пользователя ${user.username}?`);
-    if (confirmDelete) {
-      await deleteUser(id);
+    try {
+      const confirmDelete = confirm(`Вы уверены, что хотите удалить пользователя ${user.username}?`);
+      if (confirmDelete) {
+        const hasCargos = await cargoStore.checkUserCargos(id);
+        if (hasCargos) {
+          await openReassignDialog(id);
+          return;
+        }
+        await deleteUser(id);
+
+      }
+    } catch (error) {
+      console.error('Ошибка при проверке или удалении пользователя:', error);
+    }
+  }
+};
+
+const openReassignDialog = async(id: number): Promise<void> => {
+  try {
+    fromReassignUser.value = id;
+    const allUsers = await usersStore.fetchUserList();
+    usersList.value = allUsers.filter(user => user.id !== fromReassignUser.value);
+    reassignDialog.value = true;
+  } catch (error) {
+    console.error('Ошибка при загрузке данных для переназначения:', error);
+  }
+};
+
+const confirmReassign = async(): Promise<void> => {
+  if (toReassignUser.value) {
+    try {
+      await cargoStore.reassignCargos(fromReassignUser.value!, toReassignUser.value);
+      await deleteUser(fromReassignUser.value!);
+      reassignDialog.value = false;
+      fromReassignUser.value = null;
+      fromReassignUser.value = null;
+      toReassignUser.value = null;
+    } catch (error) {
+      console.error('Ошибка при переназначении грузов:', error);
     }
   }
 };
@@ -161,6 +204,24 @@ onMounted(getUsers);
           item-title="name"
           item-value="id"
           multiple
+        />
+      </form>
+    </ModalDialog>
+
+    <ModalDialog
+      v-model:dialog="reassignDialog"
+      :title='"Необходимо переназначить грузы!"'
+      :confirm-text='"Подтвердить"'
+      @confirm="confirmReassign"
+      @close="reassignDialog"
+    >
+      <form>
+        <v-select
+          v-model="toReassignUser"
+          :items="usersList"
+          item-title="username"
+          item-value="id"
+          label="Пользователь"
         />
       </form>
     </ModalDialog>

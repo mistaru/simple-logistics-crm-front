@@ -116,5 +116,31 @@ export const useCargoStore = defineStore('cargo', {
         console.error('Ошибка удаления груза:', error);
       }
     },
+
+    async checkUserCargos(authId: number): Promise<boolean> {
+      try {
+        const [response] = await fetchData(`/cargo/is-linked?userId=${authId}`);
+        return response;
+      } catch (error) {
+        console.error('Ошибка проверки связи с грузом:', error);
+        return false;
+      }
+    },
+
+    async reassignCargos(userIdToReassign: number, selectedUser: number): Promise<void> {
+      const payload = {
+        fromUserId: userIdToReassign,
+        toUserId: selectedUser,
+      };
+
+      const [error] = await fetchData('/cargo/reassign-all', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      if (error) {
+        console.error('Ошибка при переназначении грузов:', error);
+        return;
+      }
+    },
   },
 });
