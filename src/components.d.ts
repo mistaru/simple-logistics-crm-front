@@ -17,6 +17,7 @@ declare module 'vue' {
     ListSnackBar: typeof import('./components/ListSnackBar.vue')['default']
     Notification: typeof import('./components/ui/Notification.vue')['default']
     PaymentModal: typeof import('./components/PaymentModal.vue')['default']
+    PriceModal: typeof import('./components/PriceModal.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Search: typeof import('./components/Search.vue')['default']

@@ -73,6 +73,11 @@ const staticRoutes: RouteRecordRaw[] = [
     component: () => import('@/pages/CargoTruck.vue'),
   },
   {
+    path: '/price',
+    name: 'Price',
+    component: () => import('@/pages/Price.vue'),
+  },
+  {
     path: '/:catchAll(.*)',
     name: 'NotFound',
     component: () => import('@/pages/NotFound.vue'),

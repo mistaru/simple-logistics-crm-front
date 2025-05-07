@@ -93,23 +93,6 @@ const editWarehouse = (id: number) : void => {
   }
 };
 
-/*const editWarehouse = (id: number) : void => {
-  const warehouse = warehouses.value.find(w => w.id === id);
-  if (warehouse) {
-    newWarehouse.value = {
-      id: warehouse.id,
-      name: warehouse.name,
-      isLocal: warehouse.isLocal,
-      city: warehouse.city,
-      address: warehouse.address,
-      phoneNumber: warehouse.phoneNumber,
-      volumeM3: city.volumeM3
-    };
-    isEditing.value = true;
-    warehouseDialog.value = true;
-  }
-};*/
-
 const closeWarehouseModal = (): void => {
   newWarehouse.value = { name: '', isLocal: false, city: 0, address: '', phoneNumber: '', volumeM3: 0 };
   warehouseDialog.value = false;
