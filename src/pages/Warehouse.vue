@@ -94,13 +94,13 @@ const editWarehouse = (id: number) : void => {
 };
 
 const closeWarehouseModal = (): void => {
-  newWarehouse.value = { name: '', isLocal: false, city: 0, address: '', phoneNumber: '', volumeM3: 0 };
+  newWarehouse.value = { name: '', isLocal: false, city: '', address: '', phoneNumber: '', volumeM3: 0 };
   warehouseDialog.value = false;
   isEditing.value = false;
 };
 
 const openCreateWarehouseModal = async(): Promise<void> => {
-  newWarehouse.value = { name: '', isLocal: false, city: 0, address: '', phoneNumber: '', volumeM3: 0 };
+  newWarehouse.value = { name: '', isLocal: false, city: '', address: '', phoneNumber: '', volumeM3: 0 };
   isEditing.value = false;
   warehouseDialog.value = true;
 };

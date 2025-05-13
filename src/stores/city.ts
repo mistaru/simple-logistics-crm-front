@@ -33,7 +33,7 @@ export const useCityStore = defineStore('city', {
         console.error('Ошибка при загрузке городов:', error);
         return [];
       }
-      this.cities = response.sort((a: City, b: City) => a.id - b.id);
+      this.cities = response.sort((a: City, b: City) => a.name.localeCompare(b.name));
       return response;
     },
 
@@ -43,7 +43,7 @@ export const useCityStore = defineStore('city', {
         console.error('Ошибка при загрузке стран:', error);
         return [];
       }
-      this.countries = response;
+      this.countries = response.sort((a: Country, b: Country) => a.name.localeCompare(b.name));
       return response;
     },
 

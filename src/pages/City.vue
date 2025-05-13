@@ -92,7 +92,7 @@ const closeCityModal = (): void => {
 };
 
 const openCreateCityModal = async(): Promise<void> => {
-  newCity.value = { name: '', description: '', country: { id: null } };
+  newCity.value = { name: '', description: '', country: '' };
   isEditing.value = false;
   cityDialog.value = true;
 };
