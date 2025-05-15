@@ -29,7 +29,7 @@ export const usePaymentStore = defineStore('payment', {
   }),
   actions: {
     async fetchPayments() {
-      const [response, error] = await fetchData('/cargo');
+      const [response, error] = await fetchData('/payment');
       if (error) {
         console.error('Ошибка при загрузке грузов:', error);
         return [];
