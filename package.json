@@ -17,6 +17,7 @@
     "axios": "^1.7.9",
     "core-js": "^3.37.1",
     "roboto-fontface": "*",
+    "serve": "^14.2.4",
     "vue": "^3.4.31",
     "vuetify": "^3.7.5",
     "xlsx": "^0.18.5"
