@@ -12,6 +12,7 @@ const { trucks } = storeToRefs(truckStore);
 const truckDialog = ref(false);
 const isEditing = ref(false);
 const loading = ref(false);
+const saveTruckRef = ref();
 
 interface TruckForm {
   id?: number;
@@ -91,22 +92,27 @@ const deleteTruck = async(id: number) => {
 
 const saveTruck = async(): Promise<void> => {
   try {
-    const payload = {
-      ...newTruck.value,
-      departureDatePlanned: formatDateTime(newTruck.value.departureDatePlanned),
-      departureDateActual: formatDateTime(newTruck.value.departureDateActual),
-      arrivalDatePlanned: formatDateTime(newTruck.value.arrivalDatePlanned),
-      arrivalDateActual: formatDateTime(newTruck.value.arrivalDateActual),
-    };
-    if (isEditing.value) {
-      await truckStore.updateTruck(payload);
-    } else {
-      payload.volumeOccupiedM3 = 0;
-      payload.volumeAvailableM3 = payload.volumeTotalM3;
-      await truckStore.createTruck(payload);
+    const isValid = await saveTruckRef.value?.validate();
+    if (isValid?.valid) {
+      console.log('saving truck, if block is:' + isValid?.valid);
+      console.log('I am here anyway!!!');
+      const payload = {
+        ...newTruck.value,
+        departureDatePlanned: formatDateTime(newTruck.value.departureDatePlanned),
+        departureDateActual: formatDateTime(newTruck.value.departureDateActual),
+        arrivalDatePlanned: formatDateTime(newTruck.value.arrivalDatePlanned),
+        arrivalDateActual: formatDateTime(newTruck.value.arrivalDateActual),
+      };
+      if (isEditing.value) {
+        await truckStore.updateTruck(payload);
+      } else {
+        payload.volumeOccupiedM3 = 0;
+        payload.volumeAvailableM3 = payload.volumeTotalM3;
+        await truckStore.createTruck(payload);
+      }
+      closeTruckModal();
+      await getTrucks();
     }
-    closeTruckModal();
-    await getTrucks();
   } catch (error) {
     console.error('Ошибка сохранения трака:', error);
   }
@@ -198,21 +204,39 @@ onMounted(getTrucks);
       @confirm="saveTruck"
       @close="closeTruckModal"
     >
-      <v-form>
-        <v-text-field v-model="newTruck.registrationCountry" label="Страна регистрации" required />
-        <v-text-field v-model="newTruck.volumeTotalM3" label="Объем общий (м3)" type="number" required />
+      <v-form ref="saveTruckRef">
+        <v-text-field
+          v-model="newTruck.registrationCountry"
+          label="Страна регистрации"
+          :rules="[v => !!v || 'Обязательное поле']"
+          required
+        />
+        <v-text-field v-model="newTruck.volumeTotalM3" label="Объем общий (м3)"
+          :rules="[
+            v => !!v || 'Обязательное поле',
+            v => v > 0 || 'Значение должно быть больше 0'
+          ]"
+          type="number" required
+        />
         <v-text-field v-model="newTruck.volumeOccupiedM3" label="Объем занятый (м3)" type="number" readonly />
         <v-text-field v-model="newTruck.volumeAvailableM3" label="Объем доступный (м3)" type="number" readonly />
-        <v-text-field v-model="newTruck.departureWarehouse" label="Склад отправки" required />
-        <v-text-field v-model="newTruck.arrivalWarehouse" label="Склад доставки" required />
-        <v-text-field v-model="newTruck.driverFullname" label="ФИО водителя" required />
-        <v-text-field v-model="newTruck.driverPhone" label="Телефон водителя" required />
+        <v-text-field v-model="newTruck.departureWarehouse" label="Склад отправки" :rules="[v => !!v || 'Обязательное поле']" required />
+        <v-text-field v-model="newTruck.arrivalWarehouse" label="Склад доставки" :rules="[v => !!v || 'Обязательное поле']" required />
+        <v-text-field v-model="newTruck.driverFullname" label="ФИО водителя" :rules="[v => !!v || 'Обязательное поле']" required />
+        <v-text-field v-model="newTruck.driverPhone" label="Телефон водителя" :rules="[v => !!v || 'Обязательное поле']" required />
         <v-text-field v-model="newTruck.departureDatePlanned" label="Планируемая дата отправки" type="datetime-local" required />
         <v-text-field v-model="newTruck.departureDateActual" label="Фактическая дата отправки" type="datetime-local" required />
         <v-text-field v-model="newTruck.arrivalDatePlanned" label="Планируемая дата доставки" type="datetime-local" required />
         <v-text-field v-model="newTruck.arrivalDateActual" label="Фактическая дата доставки" type="datetime-local" required />
         <v-text-field v-model="newTruck.additionalInformation" label="Доп. информация" />
-        <v-text-field v-model="newTruck.serviceFee" label="Цена" type="number" required />
+        <v-text-field v-model="newTruck.serviceFee" label="Цена"
+          :rules="[
+            v => !!v || 'Обязательное поле',
+            v => v > 0 || 'Значение должно быть больше 0'
+          ]"
+          type="number"
+          required
+        />
       </v-form>
     </TruckModal>
 
