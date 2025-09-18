@@ -4,8 +4,8 @@ import router from '../router/index';
 const origin = window.location.origin;
 const dnsMapper:Record<string, string> = {
   'localhost': 'http://localhost:8081/api',
-  'test': 'https://logistic-crm-1cfef3c7df6c.herokuapp.com/api',
-  'https://logistic-crm-1cfef3c7df6c.herokuapp.com': 'https://logistic-crm-1cfef3c7df6c.herokuapp.com/api/',
+  'test': 'https://simple-logistics-crm-bff-05e3802cbbd9.herokuapp.com/api',
+  'https://simple-logistics-crm-bff-05e3802cbbd9.herokuapp.com': 'https://simple-logistics-crm-bff-05e3802cbbd9.herokuapp.com/api/',
 };
 const getBaseUrl = () => {
   const matchedKey = Object.keys(dnsMapper).find(key => origin.includes(key));
