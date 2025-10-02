@@ -34,6 +34,7 @@ const cargoHeaders = [
   { title: 'Вес (кг)', key: 'weight' },
   { title: 'Объем (м³)', key: 'volume' },
   { title: 'Количество', key: 'quantity' },
+  { title: 'Общий объем (м³)', key: 'totalVolume', sortable: false },
   { title: 'Клиент', key: 'client.fullName' },
   { title: 'Действия', key: 'actions', sortable: false },
 ];
@@ -99,7 +100,7 @@ const assignCargoToTruck = async(cargoId: number, truckId: number): Promise<void
       console.error('Ошибка привязки груза к траку:', error);
     }
   } else {
-    alert('Недостаточно места в траке!');
+    alert('Недостаточно места в траке! Доступно в фуре: ' + truck.volumeAvailableM3 + ' м3, требуется: ' + totalCargoVolumeM3 + ' м3');
   }
 };
 
@@ -167,6 +168,9 @@ onMounted(() => {
       <v-col>
         <h2>Грузы на фуре</h2>
         <v-data-table :headers="cargoHeaders" :items="cargosByTruckId" item-value="id">
+          <template #item.totalVolume="{ item }">
+            {{ item.volume * item.quantity }}
+          </template>
           <template #item.actions="{ item }">
             <v-btn color="red" size="small" @click="unassignCargoFromTruck(item.id, selectedTruckId)">
               Отвязать
@@ -180,6 +184,9 @@ onMounted(() => {
       <v-col>
         <h2>Доступные для привязки грузы</h2>
         <v-data-table :headers="cargoHeaders" :items="unassignedCargos" item-value="id">
+          <template #item.totalVolume="{ item }">
+            {{ item.volume * item.quantity }}
+          </template>
           <template #item.actions="{ item }">
             <v-btn color="green" size="small" @click="assignCargoToTruck(item.id, selectedTruckId)">
               Привязать
