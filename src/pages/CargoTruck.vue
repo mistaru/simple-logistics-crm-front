@@ -126,6 +126,7 @@ onMounted(() => {
   getCargoTrucksAll();
   getUnassignedCargos();
 });
+
 // onMounted(getTrucks); TODO: return later
 </script>
 
@@ -140,10 +141,23 @@ onMounted(() => {
           :loading="loading"
           item-value="id"
         >
-          <template #item.actions="{ item }">
-            <v-btn color="primary" size="small" class="ma-2" @click="getCargosByTruck(item.truck.id)">
-              Посмотреть грузы
-            </v-btn>
+          <template #item="{ item }">
+            <tr :class="item.truck.id === selectedTruckId ? 'selected-row' : ''">
+              <td>{{ item.truck.id }}</td>
+              <td>{{ item.truck.registrationCountry }}</td>
+              <td>{{ item.truck.volumeTotalM3 }}</td>
+              <td>{{ item.truck.volumeOccupiedM3 }}</td>
+              <td>{{ item.truck.volumeAvailableM3 }}</td>
+              <td>{{ item.truck.departureWarehouse }}</td>
+              <td>{{ item.truck.arrivalWarehouse }}</td>
+              <td>{{ item.truck.driverFullname }}</td>
+              <td>{{ item.truck.driverPhone }}</td>
+              <td>
+                <v-btn color="primary" size="small" class="ma-2" @click="getCargosByTruck(item.truck.id)">
+                  Посмотреть грузы
+                </v-btn>
+              </td>
+            </tr>
           </template>
         </v-data-table>
       </v-col>
@@ -189,3 +203,9 @@ onMounted(() => {
 <!--    </v-row>-->
   </v-container>
 </template>
+
+<style>
+.selected-row {
+  background-color: #BDBDBD !important;
+}
+</style>
