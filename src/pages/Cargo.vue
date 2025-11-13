@@ -68,17 +68,28 @@ const deleteCargo = async(id: number) => {
 };
 
 const prepareCargoData = (cargo) => ({
-  ...cargo,
+  id: cargo.id ?? null,
   weight: cargo.weight ?? 0,
   volume: cargo.volume ?? 0,
   quantity: cargo.quantity ?? 0,
+
   warehouseArrivalDate: cargo.warehouseArrivalDate
     ? new Date(cargo.warehouseArrivalDate).toISOString()
     : null,
+
   shipmentDate: cargo.shipmentDate
     ? new Date(cargo.shipmentDate).toISOString()
     : null,
-  client: cargo.client ? { id: cargo.client } : null,
+
+  status: typeof cargo.status === 'object'
+    ? cargo.status.value
+    : cargo.status,
+
+  client: typeof cargo.client === 'object'
+    ? { id: cargo.client.id }
+    : { id: cargo.client },
+
+  description: cargo.description ?? '',
 });
 
 const saveCargo = async(): Promise<void> => {
@@ -105,11 +116,23 @@ const saveCargo = async(): Promise<void> => {
 const editCargo = (id: number): void => {
   const cargo = cargos.value.find(c => c.id === id);
   if (cargo) {
-    newCargo.value = { ...cargo };
+    newCargo.value = {
+      id: cargo.id,
+      weight: cargo.weight,
+      volume: cargo.volume,
+      quantity: cargo.quantity,
+      warehouseArrivalDate: cargo.warehouseArrivalDate,
+      shipmentDate: cargo.shipmentDate,
+      status: cargo.status.value,
+      client: cargo.client.id,
+      description: cargo.description,
+    };
+
     isEditing.value = true;
     cargoDialog.value = true;
   }
 };
+
 
 const closeCargoModal = () => {
   newCargo.value = {
