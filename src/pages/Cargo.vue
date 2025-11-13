@@ -15,24 +15,29 @@ const cargoDialog = ref(false);
 const isEditing = ref(false);
 const selectedCargoId = ref<number | null>(null);
 
+// Правильная типизация
 interface CargoForm {
   id?: number | null;
   weight: number | null;
   volume: number | null;
   quantity: number | null;
-  warehouseArrivalDate?: string;
-  shipmentDate?: string;
-  status: string;
-  client: string;
-  description?: string;
+  warehouseArrivalDate?: string | null;
+  shipmentDate?: string | null;
+  status: string | null;  // статус — строка
+  client: number | null;  // клиент — только id
+  description?: string | null;
 }
 
+// пустая форма
 const newCargo = ref<CargoForm>({
+  id: null,
   weight: null,
   volume: null,
-  quantity: 1,
-  status: '',
-  client: '',
+  quantity: null,
+  warehouseArrivalDate: null,
+  shipmentDate: null,
+  status: null,
+  client: null,
   description: '',
 });
 
@@ -49,167 +54,125 @@ const headers = [
   { title: 'Действия', key: 'actions' },
 ];
 
-const getCargos = async(): Promise<void> => {
+const getCargos = async () => {
   loading.value = true;
   try {
     await cargoStore.fetchCargos();
     await cargoStore.fetchStatuses();
     await cargoStore.fetchClients();
-  } catch (error) {
-    console.error('Ошибка загрузки грузов:', error);
   } finally {
     loading.value = false;
   }
 };
 
-const deleteCargo = async(id: number) => {
+const deleteCargo = async (id: number) => {
   await cargoStore.deleteCargo(id);
   await getCargos();
 };
 
-const prepareCargoData = (cargo) => ({
-  ...cargo,
-  weight: cargo.weight ? Number(cargo.weight) : 0,
-  volume: cargo.volume ? Number(cargo.volume) : 0,
-  quantity: cargo.quantity ? Number(cargo.quantity) : 0,
+// 🔥 правильное формирование JSON
+const prepareCargoData = (cargo: CargoForm) => ({
+  id: cargo.id ?? null,
+
+  weight: Number(cargo.weight) || 0,
+  volume: Number(cargo.volume) || 0,
+  quantity: Number(cargo.quantity) || 0,
+
   warehouseArrivalDate: cargo.warehouseArrivalDate
     ? new Date(cargo.warehouseArrivalDate).toISOString()
     : null,
+
   shipmentDate: cargo.shipmentDate
     ? new Date(cargo.shipmentDate).toISOString()
     : null,
-  client: cargo.client
-    ? { id: typeof cargo.client === 'object' ? cargo.client.id : cargo.client }
-    : null,
 
+  // правильно: только { id }
+  client: cargo.client ? { id: Number(cargo.client) } : null,
+
+  // статус строка
+  status: cargo.status ?? null,
+
+  description: cargo.description ?? null,
 });
 
-
-const saveCargo = async(): Promise<void> => {
+const saveCargo = async () => {
   try {
-    const preparedCargo = prepareCargoData(newCargo.value);
-
-    preparedCargo.status = typeof preparedCargo.status === 'object'
-      ? preparedCargo.status.value
-      : preparedCargo.status;
+    const prepared = prepareCargoData(newCargo.value);
 
     if (isEditing.value && newCargo.value.id) {
-      // PUT запрос
-      await cargoStore.updateCargo(newCargo.value.id, preparedCargo);
+      await cargoStore.updateCargo(newCargo.value.id, prepared);
     } else {
-      // POST запрос
-      await cargoStore.createCargo(preparedCargo);
+      await cargoStore.createCargo(prepared);
     }
 
     closeCargoModal();
     await getCargos();
   } catch (error) {
-    console.error('Ошибка сохранения груза:', error);
+    console.error("Ошибка сохранения груза:", error);
   }
 };
 
-
-const editCargo = (id: number): void => {
+const editCargo = (id: number) => {
   const cargo = cargos.value.find(c => c.id === id);
-  if (cargo) {
-    newCargo.value = {
-      ...cargo,
-      status: cargo.status?.value,
-      client: cargo.client?.id, // ← ВАЖНО
-    };
+  if (!cargo) return;
 
-    isEditing.value = true;
-    cargoDialog.value = true;
-  }
+  newCargo.value = {
+    id: cargo.id,
+    weight: cargo.weight,
+    volume: cargo.volume,
+    quantity: cargo.quantity,
+    warehouseArrivalDate: cargo.warehouseArrivalDate,
+    shipmentDate: cargo.shipmentDate,
+
+    // 🔥 статус — только строка
+    status: cargo.status?.value ?? null,
+
+    // 🔥 клиент — только ID
+    client: cargo.client?.id ?? null,
+
+    description: cargo.description ?? '',
+  };
+
+  isEditing.value = true;
+  cargoDialog.value = true;
 };
 
 const closeCargoModal = () => {
   newCargo.value = {
-    weight: '',
-    volume: '',
-    quantity: '',
-    status: '',
-    client: '',
+    id: null,
+    weight: null,
+    volume: null,
+    quantity: null,
+    warehouseArrivalDate: null,
+    shipmentDate: null,
+    status: null,
+    client: null,
     description: '',
   };
-  selectedCargoId.value = null;
-  cargoDialog.value = false;
   isEditing.value = false;
+  cargoDialog.value = false;
 };
 
-const openCreateCargoModal = (): void => {
+const openCreateCargoModal = () => {
   newCargo.value = {
-    weight: '',
-    volume: '',
-    quantity: '',
-    warehouseArrivalDate: '',
-    shipmentDate: '',
-    status: statuses.value.length ? statuses.value[0].value : '',
-    client: '',
+    id: null,
+    weight: null,
+    volume: null,
+    quantity: null,
+    warehouseArrivalDate: null,
+    shipmentDate: null,
+    status: statuses.value.length ? statuses.value[0].value : null,
+    client: null,
     description: '',
   };
+
   isEditing.value = false;
   cargoDialog.value = true;
 };
-
 
 const canUpdate = computed(() => appStore.checkAccess('cargo', 'update'));
 const canDelete = computed(() => appStore.checkAccess('cargo', 'delete'));
 const canCreate = computed(() => appStore.checkAccess('cargo', 'create'));
 
-onMounted(async() => {
-  await getCargos();
-});
+onMounted(() => getCargos());
 </script>
-
-<template>
-  <v-container>
-    <CargoModal
-      v-model:dialog="cargoDialog"
-      :title="isEditing ? 'Редактировать груз' : 'Добавить груз'"
-      :confirm-text="isEditing ? 'Сохранить' : 'Создать'"
-      @confirm="saveCargo"
-      @close="closeCargoModal"
-    >
-      <form>
-        <v-text-field v-model="newCargo.weight" :rules="Rules.required" label="Вес (кг)" type="number" />
-        <v-text-field v-model="newCargo.volume" :rules="Rules.required" label="Объем (м³)" type="number" />
-        <v-text-field v-model="newCargo.quantity" :rules="Rules.required" label="Количество" type="number" />
-        <v-text-field v-model="newCargo.warehouseArrivalDate" label="Дата прибытия" type="datetime-local" />
-        <v-text-field v-model="newCargo.shipmentDate" label="Дата отправки" type="datetime-local" />
-        <v-select
-          v-model="newCargo.status"
-          :items="statuses"
-          item-title="description"
-          item-value="value"
-          label="Статус"
-        />
-        <v-select
-          v-model="newCargo.client"
-          :items="clients"
-          item-title="fullName"
-          item-value="id"
-          label="Клиент"
-        />
-        <v-text-field v-model="newCargo.description" label="Описание" />
-      </form>
-    </CargoModal>
-
-    <v-card>
-      <v-card-title class="d-flex align-center justify-space-between">
-        Список грузов
-        <v-btn v-if="canCreate" color="primary" @click="openCreateCargoModal">
-          Добавить груз
-        </v-btn>
-      </v-card-title>
-
-      <v-data-table :headers="headers" :items="cargos" :loading="loading" item-value="id">
-        <template #item.actions="{ item }">
-          <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editCargo(item.id)">
-            Редактировать
-          </v-btn>
-        </template>
-      </v-data-table>
-    </v-card>
-  </v-container>
-</template>
