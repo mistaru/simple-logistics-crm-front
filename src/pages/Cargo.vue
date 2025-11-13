@@ -81,7 +81,6 @@ const prepareCargoData = (cargo) => ({
   client: cargo.client ? { id: cargo.client } : null,
 });
 
-
 const saveCargo = async(): Promise<void> => {
   try {
 
@@ -114,9 +113,9 @@ const editCargo = (id: number): void => {
 
 const closeCargoModal = () => {
   newCargo.value = {
-    weight: 0,
-    volume: 0,
-    quantity: 1,
+    weight: null,
+    volume: null,
+    quantity: null,
     status: '',
     client: '',
     description: '',
@@ -126,11 +125,12 @@ const closeCargoModal = () => {
   isEditing.value = false;
 };
 
+
 const openCreateCargoModal = (): void => {
   newCargo.value = {
-    weight: 0,
-    volume: 0,
-    quantity: 0,
+    weight: null,
+    volume: null,
+    quantity: null,
     warehouseArrivalDate: '',
     shipmentDate: '',
     status: statuses.value.length ? statuses.value[0].value : '',
