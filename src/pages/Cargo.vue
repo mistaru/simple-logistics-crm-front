@@ -126,25 +126,24 @@ const editCargo = (id: number): void => {
       client: cargo.client?.id,
       description: cargo.description,
     };
-
-
     isEditing.value = true;
     cargoDialog.value = true;
   }
 };
 
-newCargo.value = {
-  id: null,
-  weight: null,
-  volume: null,
-  quantity: 1,
-  warehouseArrivalDate: null,
-  shipmentDate: null,
-  status: '',
-  client: '',
-  description: '',
+const closeCargoModal = () => {
+  newCargo.value = {
+    id: null,
+    weight: null,
+    volume: null,
+    quantity: 1,
+    warehouseArrivalDate: null,
+    shipmentDate: null,
+    status: '',
+    client: '',
+    description: '',
+  };
 };
-
 
 const openCreateCargoModal = (): void => {
   newCargo.value = {
