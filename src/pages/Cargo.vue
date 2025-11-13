@@ -16,10 +16,10 @@ const isEditing = ref(false);
 const selectedCargoId = ref<number | null>(null);
 
 interface CargoForm {
-  id?: number;
-  weight: number;
-  volume: number;
-  quantity: number;
+  id?: number | null;
+  weight: number | null;
+  volume: number | null;
+  quantity: number | null;
   warehouseArrivalDate?: string;
   shipmentDate?: string;
   status: string;
@@ -28,8 +28,8 @@ interface CargoForm {
 }
 
 const newCargo = ref<CargoForm>({
-  weight: 0,
-  volume: 0,
+  weight: null,
+  volume: null,
   quantity: 1,
   status: '',
   client: '',
@@ -69,6 +69,9 @@ const deleteCargo = async(id: number) => {
 
 const prepareCargoData = (cargo) => ({
   ...cargo,
+  weight: cargo.weight ?? 0,
+  volume: cargo.volume ?? 0,
+  quantity: cargo.quantity ?? 0,
   warehouseArrivalDate: cargo.warehouseArrivalDate
     ? new Date(cargo.warehouseArrivalDate).toISOString()
     : null,
@@ -76,8 +79,8 @@ const prepareCargoData = (cargo) => ({
     ? new Date(cargo.shipmentDate).toISOString()
     : null,
   client: cargo.client ? { id: cargo.client } : null,
-
 });
+
 
 const saveCargo = async(): Promise<void> => {
   try {
