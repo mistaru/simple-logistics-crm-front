@@ -76,8 +76,7 @@ export interface fetchOptions {
   errMessage?: string
 }
 
-export const  fetchData = async (url: string, options?: { method: string; body: string }) => {
-  const store = useAppStore();
+export const  fetchData = async(url:string, options:fetchOptions={}) => {  const store = useAppStore();
   const { body, errHandler, params, headers, method, errMessage } = options;
 
   try {
