@@ -68,21 +68,24 @@ const deleteCargo = async(id: number) => {
 };
 
 const prepareCargoData = (cargo) => ({
-  ...cargo,
-  weight: cargo.weight ? Number(cargo.weight) : 0,
-  volume: cargo.volume ? Number(cargo.volume) : 0,
-  quantity: cargo.quantity ? Number(cargo.quantity) : 0,
+  id: cargo.id ?? null,
+  weight: Number(cargo.weight) || 0,
+  volume: Number(cargo.volume) || 0,
+  quantity: Number(cargo.quantity) || 0,
+
   warehouseArrivalDate: cargo.warehouseArrivalDate
     ? new Date(cargo.warehouseArrivalDate).toISOString()
     : null,
+
   shipmentDate: cargo.shipmentDate
     ? new Date(cargo.shipmentDate).toISOString()
     : null,
-  client: cargo.client
-    ? { id: typeof cargo.client === 'object' ? cargo.client.id : cargo.client }
-    : null,
 
+  status: cargo.status,
+  client: { id: Number(cargo.client) },
+  description: cargo.description || "",
 });
+
 
 
 const saveCargo = async(): Promise<void> => {
@@ -95,7 +98,7 @@ const saveCargo = async(): Promise<void> => {
 
     if (isEditing.value && newCargo.value.id) {
       // PUT запрос
-      await cargoStore.updateCargo(newCargo.value.id, preparedCargo);
+      await cargoStore.updateCargo(preparedCargo);
     } else {
       // POST запрос
       await cargoStore.createCargo(preparedCargo);
@@ -113,29 +116,35 @@ const editCargo = (id: number): void => {
   const cargo = cargos.value.find(c => c.id === id);
   if (cargo) {
     newCargo.value = {
-      ...cargo,
+      id: cargo.id,
+      weight: cargo.weight,
+      volume: cargo.volume,
+      quantity: cargo.quantity,
+      warehouseArrivalDate: cargo.warehouseArrivalDate,
+      shipmentDate: cargo.shipmentDate,
       status: cargo.status?.value,
-      client: cargo.client?.id, // ← ВАЖНО
+      client: cargo.client?.id,
+      description: cargo.description,
     };
+
 
     isEditing.value = true;
     cargoDialog.value = true;
   }
 };
 
-const closeCargoModal = () => {
-  newCargo.value = {
-    weight: '',
-    volume: '',
-    quantity: '',
-    status: '',
-    client: '',
-    description: '',
-  };
-  selectedCargoId.value = null;
-  cargoDialog.value = false;
-  isEditing.value = false;
+newCargo.value = {
+  id: null,
+  weight: null,
+  volume: null,
+  quantity: 1,
+  warehouseArrivalDate: null,
+  shipmentDate: null,
+  status: '',
+  client: '',
+  description: '',
 };
+
 
 const openCreateCargoModal = (): void => {
   newCargo.value = {
