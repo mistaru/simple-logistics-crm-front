@@ -68,42 +68,34 @@ const deleteCargo = async(id: number) => {
 };
 
 const prepareCargoData = (cargo) => ({
-  id: cargo.id ?? null,
-  weight: Number(cargo.weight) || 0,
-  volume: Number(cargo.volume) || 0,
-  quantity: Number(cargo.quantity) || 0,
-
+  ...cargo,
+  weight: cargo.weight ?? 0,
+  volume: cargo.volume ?? 0,
+  quantity: cargo.quantity ?? 0,
   warehouseArrivalDate: cargo.warehouseArrivalDate
     ? new Date(cargo.warehouseArrivalDate).toISOString()
     : null,
-
   shipmentDate: cargo.shipmentDate
     ? new Date(cargo.shipmentDate).toISOString()
     : null,
-
-  status: cargo.status,
-  client: { id: Number(cargo.client) },
-  description: cargo.description || "",
+  client: cargo.client ? { id: cargo.client } : null,
 });
-
 
 
 const saveCargo = async(): Promise<void> => {
   try {
+
     const preparedCargo = prepareCargoData(newCargo.value);
 
-    preparedCargo.status = typeof preparedCargo.status === 'object'
-      ? preparedCargo.status.value
-      : preparedCargo.status;
+    newCargo.value.status = typeof newCargo.value.status === 'object'
+      ? newCargo.value.status.value
+      : newCargo.value.status;
 
-    if (isEditing.value && newCargo.value.id) {
-      // PUT запрос
+    if (isEditing.value) {
       await cargoStore.updateCargo(preparedCargo);
     } else {
-      // POST запрос
       await cargoStore.createCargo(preparedCargo);
     }
-
     closeCargoModal();
     await getCargos();
   } catch (error) {
@@ -111,21 +103,10 @@ const saveCargo = async(): Promise<void> => {
   }
 };
 
-
 const editCargo = (id: number): void => {
   const cargo = cargos.value.find(c => c.id === id);
   if (cargo) {
-    newCargo.value = {
-      id: cargo.id,
-      weight: cargo.weight,
-      volume: cargo.volume,
-      quantity: cargo.quantity,
-      warehouseArrivalDate: cargo.warehouseArrivalDate,
-      shipmentDate: cargo.shipmentDate,
-      status: cargo.status?.value,
-      client: cargo.client?.id,
-      description: cargo.description,
-    };
+    newCargo.value = { ...cargo };
     isEditing.value = true;
     cargoDialog.value = true;
   }
@@ -133,23 +114,23 @@ const editCargo = (id: number): void => {
 
 const closeCargoModal = () => {
   newCargo.value = {
-    id: null,
-    weight: null,
-    volume: null,
+    weight: 0,
+    volume: 0,
     quantity: 1,
-    warehouseArrivalDate: null,
-    shipmentDate: null,
     status: '',
     client: '',
     description: '',
   };
+  selectedCargoId.value = null;
+  cargoDialog.value = false;
+  isEditing.value = false;
 };
 
 const openCreateCargoModal = (): void => {
   newCargo.value = {
-    weight: '',
-    volume: '',
-    quantity: '',
+    weight: 0,
+    volume: 0,
+    quantity: 0,
     warehouseArrivalDate: '',
     shipmentDate: '',
     status: statuses.value.length ? statuses.value[0].value : '',
@@ -159,7 +140,6 @@ const openCreateCargoModal = (): void => {
   isEditing.value = false;
   cargoDialog.value = true;
 };
-
 
 const canUpdate = computed(() => appStore.checkAccess('cargo', 'update'));
 const canDelete = computed(() => appStore.checkAccess('cargo', 'delete'));
