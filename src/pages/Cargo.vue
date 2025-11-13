@@ -101,11 +101,7 @@ const saveCargo = async(): Promise<void> => {
       ? newCargo.value.status.value
       : newCargo.value.status;
 
-    if (isEditing.value) {
-      await cargoStore.updateCargo(preparedCargo);
-    } else {
-      await cargoStore.createCargo(preparedCargo);
-    }
+    await cargoStore.createCargo(preparedCargo);
     closeCargoModal();
     await getCargos();
   } catch (error) {
@@ -147,7 +143,6 @@ const closeCargoModal = () => {
   cargoDialog.value = false;
   isEditing.value = false;
 };
-
 
 const openCreateCargoModal = (): void => {
   newCargo.value = {
