@@ -101,7 +101,13 @@ const saveCargo = async(): Promise<void> => {
       ? newCargo.value.status.value
       : newCargo.value.status;
 
-    await cargoStore.createCargo(preparedCargo);
+    if (isEditing.value && newCargo.value.id) {
+      // PUT запрос
+      await cargoStore.updateCargo(newCargo.value.id, preparedCargo);
+    } else {
+      // POST запрос
+      await cargoStore.createCargo(preparedCargo);
+    }
     closeCargoModal();
     await getCargos();
   } catch (error) {
