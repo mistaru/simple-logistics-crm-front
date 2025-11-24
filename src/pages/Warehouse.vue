@@ -22,6 +22,7 @@ interface WarehouseForm {
   address: string;
   phoneNumber: string;
   volumeM3: number;
+  weightKg: number;
 }
 
 const newWarehouse = ref<WarehouseForm>({
@@ -31,6 +32,7 @@ const newWarehouse = ref<WarehouseForm>({
   address: '',
   phoneNumber: '',
   volumeM3: 0,
+  weightKg: 0,
 });
 
 const headers = [
@@ -41,6 +43,7 @@ const headers = [
   { title: 'Адрес', key: 'address' },
   { title: 'Номер телефона', key: 'phoneNumber' },
   { title: 'Объем (м3)', key: 'volumeM3' },
+  { title: 'Вес (кг)', key: 'weightKg' },
   { title: 'Действия', key: 'actions' },
 ];
 
@@ -94,13 +97,13 @@ const editWarehouse = (id: number) : void => {
 };
 
 const closeWarehouseModal = (): void => {
-  newWarehouse.value = { name: '', isLocal: false, city: '', address: '', phoneNumber: '', volumeM3: 0 };
+  newWarehouse.value = { name: '', isLocal: false, city: '', address: '', phoneNumber: '', volumeM3: 0, weightKg: 0 };
   warehouseDialog.value = false;
   isEditing.value = false;
 };
 
 const openCreateWarehouseModal = async(): Promise<void> => {
-  newWarehouse.value = { name: '', isLocal: false, city: '', address: '', phoneNumber: '', volumeM3: 0 };
+  newWarehouse.value = { name: '', isLocal: false, city: '', address: '', phoneNumber: '', volumeM3: 0, weightKg: 0 };
   isEditing.value = false;
   warehouseDialog.value = true;
 };
@@ -134,6 +137,7 @@ onMounted(getWarehouses);
         <v-text-field v-model="newWarehouse.address" :rules="Rules.required" label="Адрес" />
         <v-text-field v-model="newWarehouse.phoneNumber" :rules="Rules.required" label="Телефон склада" />
         <v-text-field v-model="newWarehouse.volumeM3" type="number" :rules="Rules.required" label="Объем (м3)" />
+        <v-text-field v-model="newWarehouse.weightKg" type="number" :rules="Rules.required" label="Вес (кг)" />
       </form>
     </ModalDialog>
 

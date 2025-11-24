@@ -11,6 +11,7 @@ interface Warehouse {
   address: string;
   phoneNumber: string;
   volumeM3: number;
+  weightKg: number;
 }
 
 interface City {
@@ -59,7 +60,8 @@ export const useWarehouseStore = defineStore('warehouse', {
         city: { id: warehouseData.city.id },
         address: warehouseData.address,
         phoneNumber: warehouseData.phoneNumber,
-        volumeM3: warehouseData.volumeM3
+        volumeM3: warehouseData.volumeM3,
+        weightKg: warehouseData.weightKg,
       };
 
       const [response, error] = await fetchData('/warehouse', {
@@ -84,7 +86,8 @@ export const useWarehouseStore = defineStore('warehouse', {
         city: { id: updatedWarehouse.city.id },
         address: updatedWarehouse.address,
         phoneNumber: updatedWarehouse.phoneNumber,
-        volumeM3: updatedWarehouse.volumeM3
+        volumeM3: updatedWarehouse.volumeM3,
+        weightKg: updatedWarehouse.weightKg,
       };
 
       const [response, error] = await fetchData('/warehouse', {
