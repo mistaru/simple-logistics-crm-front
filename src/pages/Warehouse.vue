@@ -43,7 +43,9 @@ const headers = [
   { title: 'Адрес', key: 'address' },
   { title: 'Номер телефона', key: 'phoneNumber' },
   { title: 'Объем (м3)', key: 'volumeM3' },
+  { title: 'Занятый объем (м3)', key: 'occupiedVolume' },
   { title: 'Вес (кг)', key: 'weightKg' },
+  { title: 'Занятый вес (кг)', key: 'occupiedWeight' },
   { title: 'Действия', key: 'actions' },
 ];
 

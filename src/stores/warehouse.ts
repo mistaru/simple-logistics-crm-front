@@ -12,6 +12,8 @@ interface Warehouse {
   phoneNumber: string;
   volumeM3: number;
   weightKg: number;
+  occupiedVolume?: number;
+  occupiedWeight?: number;
 }
 
 interface City {
