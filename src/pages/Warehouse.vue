@@ -105,7 +105,7 @@ const closeWarehouseModal = (): void => {
 };
 
 const openCreateWarehouseModal = async(): Promise<void> => {
-  newWarehouse.value = { name: '', isLocal: false, city: '', address: '', phoneNumber: '', volumeM3: 0, weightKg: 0 };
+  newWarehouse.value = { name: '', isLocal: false, city: '', address: '', phoneNumber: '', volumeM3: null, weightKg: null };
   isEditing.value = false;
   warehouseDialog.value = true;
 };
