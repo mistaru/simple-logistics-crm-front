@@ -1,17 +1,17 @@
-import {defineStore} from 'pinia';
+import { defineStore } from 'pinia';
 import axios from 'axios';
-import {useAppStore} from '@/stores/app';
+import { useAppStore } from '@/stores/app';
 
 const appStore = useAppStore();
 
 interface Client {
-  id: number;
+  id?: number | null;
   fullName: string;
-  clientCode: string;
+  clientCode?: string;
   phoneNumber: string;
-  whatsappNumber: string;
-  email: string;
-  additionalInfo: string;
+  whatsappNumber?: string;
+  email?: string;
+  additionalInfo?: string;
 }
 
 class State {

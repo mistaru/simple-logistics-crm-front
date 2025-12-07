@@ -22,13 +22,13 @@ interface CargoStatus {
 }
 
 interface Client {
-  id: number;
+  id?: number | null;
   fullName: string;
-  clientCode: string;
+  clientCode?: string;
   phoneNumber: string;
-  whatsappNumber: string;
-  email: string;
-  additionalInfo: string;
+  whatsappNumber?: string;
+  email?: string;
+  additionalInfo?: string;
 }
 
 class State {
