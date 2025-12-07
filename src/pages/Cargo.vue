@@ -4,7 +4,6 @@ import { useCargoStore } from '@/stores/cargo';
 import { useAppStore } from '@/stores/app';
 import { storeToRefs } from 'pinia';
 import CargoModal from '@/components/CargoModal.vue';
-import AddClientModal from '@/components/AddClientModal.vue';
 import Rules from '@/utils/rules';
 
 const cargoStore = useCargoStore();
@@ -13,18 +12,18 @@ const { cargos, statuses, clients } = storeToRefs(cargoStore);
 
 const loading = ref(false);
 const cargoDialog = ref(false);
-const addClientDialog = ref(false);
 const isEditing = ref(false);
+const selectedCargoId = ref<number | null>(null);
 
 interface CargoForm {
   id?: number | null;
   weight: number | null;
   volume: number | null;
   quantity: number | null;
-  warehouseArrivalDate?: string | null;
-  shipmentDate?: string | null;
+  warehouseArrivalDate?: string;
+  shipmentDate?: string;
   status: string;
-  client: number | string | null;
+  client: string;
   description?: string;
 }
 
@@ -50,87 +49,65 @@ const headers = [
   { title: 'Действия', key: 'actions' },
 ];
 
-// ------------------------------------------------------
-// ГРУЗЫ
-// ------------------------------------------------------
-const getCargos = async () => {
+const getCargos = async(): Promise<void> => {
   loading.value = true;
   try {
     await cargoStore.fetchCargos();
     await cargoStore.fetchStatuses();
     await cargoStore.fetchClients();
+  } catch (error) {
+    console.error('Ошибка загрузки грузов:', error);
   } finally {
     loading.value = false;
   }
 };
 
-const deleteCargo = async (id: number) => {
+const deleteCargo = async(id: number) => {
   await cargoStore.deleteCargo(id);
   await getCargos();
 };
 
-// ------------------------------------------------------
-// ВЫБОР КЛИЕНТА В SELECT
-// ------------------------------------------------------
-const onClientSelect = (value: number | string) => {
-  if (value === -1) {
-    addClientDialog.value = true;
-    newCargo.value.client = null;
-  }
-};
-
-// ------------------------------------------------------
-// СОЗДАНИЕ НОВОГО КЛИЕНТА
-// ------------------------------------------------------
-const createClient = async(clientData: { fullName: string; phone: string }) => {
-  try {
-    const created = await cargoStore.createClient(clientData);
-
-    await cargoStore.fetchClients();
-
-    newCargo.value.client = created.id; // автоматический выбор нового
-  } catch (e) {
-    console.error('Ошибка создания клиента:', e);
-  }
-};
-
-// ------------------------------------------------------
-// ПОДГОТОВКА ГРУЗА К API
-// ------------------------------------------------------
-const prepareCargoData = (cargo: CargoForm) => ({
+const prepareCargoData = (cargo) => ({
   id: cargo.id ?? null,
   weight: cargo.weight ?? 0,
   volume: cargo.volume ?? 0,
   quantity: cargo.quantity ?? 0,
+
   warehouseArrivalDate: cargo.warehouseArrivalDate
     ? new Date(cargo.warehouseArrivalDate).toISOString()
     : null,
+
   shipmentDate: cargo.shipmentDate
     ? new Date(cargo.shipmentDate).toISOString()
     : null,
 
-  status: cargo.status,
+  status: typeof cargo.status === 'object'
+    ? cargo.status.value
+    : cargo.status,
 
-  client: {
-    id: cargo.client,
-  },
+  client: typeof cargo.client === 'object'
+    ? { id: cargo.client.id }
+    : { id: cargo.client },
 
   description: cargo.description ?? '',
 });
 
-// ------------------------------------------------------
-// СОХРАНЕНИЕ ГРУЗА
-// ------------------------------------------------------
-const saveCargo = async () => {
+const saveCargo = async(): Promise<void> => {
   try {
+
     const preparedCargo = prepareCargoData(newCargo.value);
 
+    newCargo.value.status = typeof newCargo.value.status === 'object'
+      ? newCargo.value.status.value
+      : newCargo.value.status;
+
     if (isEditing.value && newCargo.value.id) {
+      // PUT запрос
       await cargoStore.updateCargo(preparedCargo);
     } else {
+      // POST запрос
       await cargoStore.createCargo(preparedCargo);
     }
-
     closeCargoModal();
     await getCargos();
   } catch (error) {
@@ -138,57 +115,52 @@ const saveCargo = async () => {
   }
 };
 
-// ------------------------------------------------------
-// РЕДАКТИРОВАНИЕ ГРУЗА
-// ------------------------------------------------------
-const editCargo = (id: number) => {
+const editCargo = (id: number): void => {
   const cargo = cargos.value.find(c => c.id === id);
-  if (!cargo) return;
+  if (cargo) {
+    newCargo.value = {
+      id: cargo.id,
+      weight: cargo.weight,
+      volume: cargo.volume,
+      quantity: cargo.quantity,
+      warehouseArrivalDate: cargo.warehouseArrivalDate,
+      shipmentDate: cargo.shipmentDate,
+      status: cargo.status.value,
+      client: cargo.client.id,
+      description: cargo.description,
+    };
 
-  newCargo.value = {
-    id: cargo.id,
-    weight: cargo.weight,
-    volume: cargo.volume,
-    quantity: cargo.quantity,
-    warehouseArrivalDate: cargo.warehouseArrivalDate,
-    shipmentDate: cargo.shipmentDate,
-    status: cargo.status.value,
-    client: cargo.client.id,
-    description: cargo.description,
-  };
-
-  isEditing.value = true;
-  cargoDialog.value = true;
+    isEditing.value = true;
+    cargoDialog.value = true;
+  }
 };
 
-// ------------------------------------------------------
-// ЗАКРЫТЬ МОДАЛКУ ГРУЗА
-// ------------------------------------------------------
+
 const closeCargoModal = () => {
   newCargo.value = {
     weight: null,
     volume: null,
-    quantity: 1,
-    status: statuses.value.length ? statuses.value[0].value : '',
+    quantity: null,
+    status: '',
     client: '',
     description: '',
   };
-  isEditing.value = false;
+  selectedCargoId.value = null;
   cargoDialog.value = false;
+  isEditing.value = false;
 };
 
-const openCreateCargoModal = () => {
+const openCreateCargoModal = (): void => {
   newCargo.value = {
     weight: null,
     volume: null,
-    quantity: 1,
+    quantity: null,
     warehouseArrivalDate: '',
     shipmentDate: '',
     status: statuses.value.length ? statuses.value[0].value : '',
     client: '',
     description: '',
   };
-
   isEditing.value = false;
   cargoDialog.value = true;
 };
@@ -203,12 +175,6 @@ onMounted(async() => {
 </script>
 
 <template>
-  <!-- Модалка: добавление нового клиента -->
-  <AddClientModal
-    v-model:dialog="addClientDialog"
-    @saved="createClient"
-  />
-
   <v-container>
     <CargoModal
       v-model:dialog="cargoDialog"
@@ -221,10 +187,8 @@ onMounted(async() => {
         <v-text-field v-model="newCargo.weight" :rules="Rules.required" label="Вес (кг)" type="number" />
         <v-text-field v-model="newCargo.volume" :rules="Rules.required" label="Объем (м³)" type="number" />
         <v-text-field v-model="newCargo.quantity" :rules="Rules.required" label="Количество" type="number" />
-
-        <v-text-field v-model="newCargo.warehouseArrivalDate" type="datetime-local" label="Дата прибытия" />
-        <v-text-field v-model="newCargo.shipmentDate" type="datetime-local" label="Дата отправки" />
-
+        <v-text-field v-model="newCargo.warehouseArrivalDate" label="Дата прибытия" type="datetime-local" />
+        <v-text-field v-model="newCargo.shipmentDate" label="Дата отправки" type="datetime-local" />
         <v-select
           v-model="newCargo.status"
           :items="statuses"
@@ -232,17 +196,13 @@ onMounted(async() => {
           item-value="value"
           label="Статус"
         />
-
-        <!-- КЛИЕНТ с кнопкой + Добавить -->
         <v-select
           v-model="newCargo.client"
-          :items="[...clients, { id: -1, fullName: '+ Добавить нового клиента' }]"
+          :items="clients"
           item-title="fullName"
           item-value="id"
           label="Клиент"
-          @update:modelValue="onClientSelect"
         />
-
         <v-text-field v-model="newCargo.description" label="Описание" />
       </form>
     </CargoModal>
