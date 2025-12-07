@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { useCargoStore } from '@/stores/cargo';
+import { useClientStore } from '@/stores/client';
 import { useAppStore } from '@/stores/app';
 import { storeToRefs } from 'pinia';
 import CargoModal from '@/components/CargoModal.vue';
 import Rules from '@/utils/rules';
 
 const cargoStore = useCargoStore();
+const clientStore = useClientStore();
 const appStore = useAppStore();
 const { cargos, statuses, clients } = storeToRefs(cargoStore);
 
@@ -14,6 +16,13 @@ const loading = ref(false);
 const cargoDialog = ref(false);
 const isEditing = ref(false);
 const selectedCargoId = ref<number | null>(null);
+
+const newClientMode = ref(false);
+const newClient = ref({
+  fullName: '',
+  phoneNumber: '',
+});
+const clientLoading = ref(false);
 
 interface CargoForm {
   id?: number | null;
@@ -115,6 +124,39 @@ const saveCargo = async(): Promise<void> => {
   }
 };
 
+const createNewClient = async() => {
+  if (!newClient.value.fullName || !newClient.value.phoneNumber) {
+    alert('Введите ФИО и телефон');
+    return;
+  }
+
+  clientLoading.value = true;
+
+  const created = await clientStore.createClient({
+    id: 0,
+    fullName: newClient.value.fullName,
+    clientCode: '',
+    phoneNumber: newClient.value.phoneNumber,
+    whatsappNumber: '',
+    email: '',
+    additionalInfo: '',
+  });
+
+  clientLoading.value = false;
+
+  if (!created) {
+    alert('Ошибка создания клиента');
+    return;
+  }
+
+  clients.value.push(created);
+
+  newCargo.value.client = created.id;
+
+  newClientMode.value = false;
+  newClient.value = { fullName: '', phoneNumber: '' };
+};
+
 const editCargo = (id: number): void => {
   const cargo = cargos.value.find(c => c.id === id);
   if (cargo) {
@@ -134,7 +176,6 @@ const editCargo = (id: number): void => {
     cargoDialog.value = true;
   }
 };
-
 
 const closeCargoModal = () => {
   newCargo.value = {
@@ -184,11 +225,34 @@ onMounted(async() => {
       @close="closeCargoModal"
     >
       <form>
-        <v-text-field v-model="newCargo.weight" :rules="Rules.required" label="Вес (кг)" type="number" />
-        <v-text-field v-model="newCargo.volume" :rules="Rules.required" label="Объем (м³)" type="number" />
-        <v-text-field v-model="newCargo.quantity" :rules="Rules.required" label="Количество" type="number" />
-        <v-text-field v-model="newCargo.warehouseArrivalDate" label="Дата прибытия" type="datetime-local" />
-        <v-text-field v-model="newCargo.shipmentDate" label="Дата отправки" type="datetime-local" />
+        <v-text-field
+          v-model="newCargo.weight"
+          :rules="Rules.required"
+          label="Вес (кг)"
+          type="number"
+        />
+        <v-text-field
+          v-model="newCargo.volume"
+          :rules="Rules.required"
+          label="Объем (м³)"
+          type="number"
+        />
+        <v-text-field
+          v-model="newCargo.quantity"
+          :rules="Rules.required"
+          label="Количество"
+          type="number"
+        />
+        <v-text-field
+          v-model="newCargo.warehouseArrivalDate"
+          label="Дата прибытия"
+          type="datetime-local"
+        />
+        <v-text-field
+          v-model="newCargo.shipmentDate"
+          label="Дата отправки"
+          type="datetime-local"
+        />
         <v-select
           v-model="newCargo.status"
           :items="statuses"
@@ -203,21 +267,72 @@ onMounted(async() => {
           item-value="id"
           label="Клиент"
         />
-        <v-text-field v-model="newCargo.description" label="Описание" />
+        <v-btn
+          color="secondary"
+          class="mt-2"
+          @click="newClientMode = !newClientMode"
+        >
+          {{ newClientMode ? 'Отменить' : 'Добавить нового клиента' }}
+        </v-btn>
+
+        <div
+          v-if="newClientMode"
+          class="mt-3"
+        >
+          <v-text-field
+            v-model="newClient.fullName"
+            label="ФИО нового клиента"
+            :rules="Rules.required"
+          />
+
+          <v-text-field
+            v-model="newClient.phoneNumber"
+            label="Телефон клиента"
+            :rules="Rules.required"
+          />
+
+          <v-btn
+            color="green"
+            class="mt-2"
+            :loading="clientLoading"
+            @click="createNewClient"
+          >
+            Создать клиента
+          </v-btn>
+        </div>
+        <v-text-field
+          v-model="newCargo.description"
+          label="Описание"
+        />
       </form>
     </CargoModal>
 
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between">
         Список грузов
-        <v-btn v-if="canCreate" color="primary" @click="openCreateCargoModal">
+        <v-btn
+          v-if="canCreate"
+          color="primary"
+          @click="openCreateCargoModal"
+        >
           Добавить груз
         </v-btn>
       </v-card-title>
 
-      <v-data-table :headers="headers" :items="cargos" :loading="loading" item-value="id">
+      <v-data-table
+        :headers="headers"
+        :items="cargos"
+        :loading="loading"
+        item-value="id"
+      >
         <template #item.actions="{ item }">
-          <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editCargo(item.id)">
+          <v-btn
+            v-if="canUpdate"
+            color="blue"
+            size="small"
+            class="ma-2"
+            @click="editCargo(item.id)"
+          >
             Редактировать
           </v-btn>
         </template>
