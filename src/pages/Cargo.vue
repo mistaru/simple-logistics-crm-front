@@ -133,7 +133,7 @@ const createNewClient = async() => {
   clientLoading.value = true;
 
   const created = await clientStore.createClient({
-    id: 0,
+    id: null,
     fullName: newClient.value.fullName,
     clientCode: '',
     phoneNumber: newClient.value.phoneNumber,
