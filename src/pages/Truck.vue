@@ -28,8 +28,13 @@ interface TruckForm {
   departureDateActual: Date;
   arrivalDatePlanned: Date;
   arrivalDateActual: Date;
+  carrier: string;
+  serviceFee: number; // TODO это поле нужно??
+  customsFee: number;
+  expenses: number;
+  additionalExpenses: number;
+  totalAmount: number;
   additionalInformation?: string;
-  serviceFee: number;
   // availableVolume: number;
 }
 
@@ -46,8 +51,13 @@ const newTruck = ref<TruckForm>({
   departureDateActual: new Date(),
   arrivalDatePlanned: new Date(),
   arrivalDateActual: new Date(),
+  carrier: '',
+  serviceFee: 0, // TODO это поле нужно??
+  customsFee: 0,
+  expenses: 0,
+  additionalExpenses: 0,
+  totalAmount: 0,
   additionalInformation: '',
-  serviceFee: 0,
   // availableVolume: 0,
 });
 
@@ -65,8 +75,13 @@ const headers = [
   { title: 'Фактическая дата отправки', key: 'departureDateActual' },
   { title: 'Планируемая дата доставки', key: 'arrivalDatePlanned' },
   { title: 'Фактическая дата доставки', key: 'arrivalDateActual' },
+  { title: 'Перевозчик', key: 'carrier' },
+  { title: 'Цена', key: 'serviceFee' }, // TODO это поле нужно??
+  { title: 'Стоимость таможни', key: 'customsFee' },
+  { title: 'Расходы', key: 'expenses' },
+  { title: 'Доп. расходы', key: 'additionalExpenses' },
+  { title: 'Общая сумма', key: 'totalAmount' },
   { title: 'Доп. информация', key: 'additionalInformation' },
-  { title: 'Цена', key: 'serviceFee' },
   { title: 'Действия', key: 'actions', sortable: false },
 ];
 
@@ -152,8 +167,13 @@ const closeTruckModal = (): void => {
     departureDateActual: new Date(),
     arrivalDatePlanned: new Date(),
     arrivalDateActual: new Date(),
+    carrier: '',
+    serviceFee: 0, // TODO это поле нужно??
+    customsFee: 0,
+    expenses: 0,
+    additionalExpenses: 0,
+    totalAmount: 0,
     additionalInformation: '',
-    serviceFee: 0,
     //availableVolume: 0,
   };
   truckDialog.value = false;
@@ -174,8 +194,13 @@ const openCreateTruckModal = (): void => {
     departureDateActual: new Date(),
     arrivalDatePlanned: new Date(),
     arrivalDateActual: new Date(),
+    carrier: '',
+    serviceFee: 0, // TODO это поле нужно??
+    customsFee: 0,
+    expenses: 0,
+    additionalExpenses: 0,
+    totalAmount: 0,
     additionalInformation: '',
-    serviceFee: 0,
     //availableVolume: 0,
   };
   isEditing.value = false;
@@ -228,7 +253,7 @@ onMounted(getTrucks);
         <v-text-field v-model="newTruck.departureDateActual" label="Фактическая дата отправки" type="datetime-local" required />
         <v-text-field v-model="newTruck.arrivalDatePlanned" label="Планируемая дата доставки" type="datetime-local" required />
         <v-text-field v-model="newTruck.arrivalDateActual" label="Фактическая дата доставки" type="datetime-local" required />
-        <v-text-field v-model="newTruck.additionalInformation" label="Доп. информация" />
+        <v-text-field v-model="newTruck.carrier" label="'Перевозчик" type="text" :rules="[v => !!v || 'Обязательное поле']" />
         <v-text-field v-model="newTruck.serviceFee" label="Цена"
           :rules="[
             v => !!v || 'Обязательное поле',
@@ -237,6 +262,11 @@ onMounted(getTrucks);
           type="number"
           required
         />
+        <v-text-field v-model="newTruck.customsFee" label="Стоимость таможни" type="number" />
+        <v-text-field v-model="newTruck.expenses" label="Расходы" type="number" />
+        <v-text-field v-model="newTruck.additionalExpenses" label="Доп. расходы" type="number" />
+        <v-text-field v-model="newTruck.totalAmount" label="Общая сумма" type="number" />
+        <v-text-field v-model="newTruck.additionalInformation" label="Доп. информация" />
       </v-form>
     </TruckModal>
 

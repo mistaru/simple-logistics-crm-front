@@ -18,6 +18,12 @@ interface Truck {
   departureDateActual: Date;
   arrivalDatePlanned: Date;
   arrivalDateActual: Date;
+  carrier: string;
+  serviceFee: number; // TODO это поле нужно??
+  customsFee: number;
+  expenses: number;
+  additionalExpenses: number;
+  totalAmount: number;
   additionalInformation?: string;
 }
 
