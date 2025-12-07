@@ -74,6 +74,20 @@ export const useCargoStore = defineStore('cargo', {
       return response;
     },
 
+    async createClient(clientData) {
+      const [response, error] = await fetchData('/client/create', {
+        method: 'POST',
+        body: JSON.stringify(clientData),
+      });
+
+      if (error) {
+        console.error('Ошибка создания клиента:', error);
+        throw error;
+      }
+
+      return response;
+    },
+
     async createCargo(cargoData: Cargo): Promise<Cargo | null> {
       const [response, error] = await fetchData('/cargo', {
         method: 'POST',
