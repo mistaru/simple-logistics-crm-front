@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import { useAppStore } from '@/stores/app';
+import Carrier from '@/stores/carrier';
 
 const appStore = useAppStore();
 
@@ -18,7 +19,7 @@ interface Truck {
   departureDateActual: Date;
   arrivalDatePlanned: Date;
   arrivalDateActual: Date;
-  carrier: string;
+  carrier: Carrier;
   serviceFee: number; // TODO это поле нужно??
   customsFee: number;
   expenses: number;

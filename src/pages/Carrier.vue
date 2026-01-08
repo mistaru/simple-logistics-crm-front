@@ -3,10 +3,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useCarrierStore } from '@/stores/carrier';
 import { useAppStore } from '@/stores/app';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import CarrierModal from '@/components/CarrierModal.vue';
 
 const carrierStore = useCarrierStore();
 const appStore = useAppStore();
+const router = useRouter();
 const { carriers } = storeToRefs(carrierStore);
 
 const carrierDialog = ref(false);
@@ -35,6 +37,7 @@ const headers = [
   { title: 'Email', key: 'email' },
   { title: 'Телефон', key: 'phoneNumber' },
   { title: 'Баланс', key: 'balance' },
+  { title: 'Профиль', key: 'profile', sortable: false },
   { title: 'Действия', key: 'actions', sortable: false },
 ];
 
@@ -85,6 +88,10 @@ const editCarrier = (id: number): void => {
   }
 };
 
+const viewCarrier = (id: number): void => {
+  router.push({ name: 'CarrierProfile', params: { id } });
+};
+
 const closeCarrierModal = (): void => {
   newCarrier.value = {
     name: '',
@@ -127,6 +134,11 @@ onMounted(getCarriers);
       </v-card-title>
 
       <v-data-table :headers="headers" :items="carriers" :loading="loading" item-value="id">
+        <template #item.profile="{ item }">
+          <v-btn color="info" size="small" class="mr-2" @click="viewCarrier(item.id)">
+            Профиль
+          </v-btn>
+        </template>
         <template #item.actions="{ item }">
           <v-btn v-if="canDelete" color="red" size="small" @click="deleteCarrier(item.id)">
             Удалить

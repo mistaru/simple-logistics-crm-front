@@ -83,6 +83,11 @@ const staticRoutes: RouteRecordRaw[] = [
     component: () => import('@/pages/Carrier.vue'),
   },
   {
+    path: '/carrier/:id',
+    name: 'CarrierProfile',
+    component: () => import('@/pages/CarrierProfile.vue'),
+  },
+  {
     path: '/:catchAll(.*)',
     name: 'NotFound',
     component: () => import('@/pages/NotFound.vue'),
