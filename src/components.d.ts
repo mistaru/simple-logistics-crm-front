@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     CargoModal: typeof import('./components/CargoModal.vue')['default']
+    CarrierModal: typeof import('./components/CarrierModal.vue')['default']
     CityModal: typeof import('./components/CityModal.vue')['default']
     ClientModal: typeof import('./components/ClientModal.vue')['default']
     ConfirmDialog: typeof import('./components/ConfirmDialog.vue')['default']

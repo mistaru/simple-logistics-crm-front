@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { useFetchData } from '@/composables/fetchData';
 
 interface Carrier {
   id?: number;
@@ -27,7 +28,8 @@ export const useCarrierStore = defineStore('carrier', {
       return response;
     },
 
-    async createCarrier(carrierData: Carrier): Promise<Carrier | null> {      const [response, error] = await fetchData('/carrier', {
+    async createCarrier(carrierData: Carrier): Promise<Carrier | null> {
+      const [response, error] = await fetchData('/carrier', {
         method: 'POST',
         body: JSON.stringify(carrierData),
       });
@@ -42,7 +44,10 @@ export const useCarrierStore = defineStore('carrier', {
     },
 
     async updateCarrier(updatedCarrier: Carrier): Promise<Carrier | null> {
-      const [response, error] = await fetchData('/carrier', 'PUT', updatedCarrier);
+      const [response, error] = await fetchData('/carrier', {
+        method: 'PUT',
+        body: JSON.stringify(updatedCarrier),
+      });
 
       if (error) {
         console.error('Ошибка при обновлении перевозчика:', error);
@@ -58,7 +63,9 @@ export const useCarrierStore = defineStore('carrier', {
     },
 
     async deleteCarrier(id: number) {
-      const [_, error] = await fetchData(`/carrier/${id}`, 'DELETE');
+      const [_, error] = await fetchData(`/carrier/${id}`, {
+        method: 'DELETE',
+      });
 
       if (error) {
         console.error('Ошибка удаления перевозчика:', error);
