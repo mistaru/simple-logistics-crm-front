@@ -2,15 +2,18 @@
 import { ref, computed, onMounted } from 'vue';
 import { useTruckStore } from '@/stores/truck';
 import { useCarrierStore } from '@/stores/carrier';
+import { useCargoStore } from '@/stores/cargo';
 import { useAppStore } from '@/stores/app';
 import { storeToRefs } from 'pinia';
 import TruckModal from '@/components/TruckModal.vue';
 
 const truckStore = useTruckStore();
 const carrierStore = useCarrierStore();
+const cargoStore = useCargoStore();
 const appStore = useAppStore();
 const { trucks } = storeToRefs(truckStore);
 const { carriers } = storeToRefs(carrierStore);
+const { statuses } = storeToRefs(cargoStore);
 
 const truckDialog = ref(false);
 const isEditing = ref(false);
@@ -20,9 +23,9 @@ const saveTruckRef = ref();
 interface TruckForm {
   id?: number;
   registrationCountry: string;
-  volumeTotalM3: number;
-  volumeOccupiedM3: number;
-  volumeAvailableM3: number;
+  volumeTotalM3: number | null;
+  volumeOccupiedM3: number | null;
+  volumeAvailableM3: number | null;
   departureWarehouse: string;
   arrivalWarehouse: string;
   driverFullname: string;
@@ -32,19 +35,20 @@ interface TruckForm {
   arrivalDatePlanned: Date;
   arrivalDateActual: Date;
   carrier: any; // Changed to any to handle both object and string cases temporarily
-  serviceFee: number; // TODO это поле нужно??
-  customsFee: number;
-  expenses: number;
-  additionalExpenses: number;
-  totalAmount: number;
+  serviceFee: number | null; // TODO это поле нужно??
+  customsFee: number | null;
+  expenses: number | null;
+  additionalExpenses: number | null;
+  totalAmount: number | null;
   additionalInformation?: string;
+  cargoStatus?: string;
   // availableVolume: number;
 }
 
 const newTruck = ref<TruckForm>({
   registrationCountry: '',
-  volumeTotalM3: 0,
-  volumeOccupiedM3: 0,
+  volumeTotalM3: null,
+  volumeOccupiedM3: null,
   volumeAvailableM3: 0,
   departureWarehouse: '',
   arrivalWarehouse: '',
@@ -55,12 +59,13 @@ const newTruck = ref<TruckForm>({
   arrivalDatePlanned: new Date(),
   arrivalDateActual: new Date(),
   carrier: null,
-  serviceFee: 0, // TODO это поле нужно??
-  customsFee: 0,
-  expenses: 0,
-  additionalExpenses: 0,
-  totalAmount: 0,
+  serviceFee: null, // TODO это поле нужно??
+  customsFee: null,
+  expenses: null,
+  additionalExpenses: null,
+  totalAmount: null,
   additionalInformation: '',
+  cargoStatus: '',
   // availableVolume: 0,
 });
 
@@ -78,6 +83,7 @@ const headers = [
   { title: 'Фактическая дата отправки', key: 'departureDateActual' },
   { title: 'Планируемая дата доставки', key: 'arrivalDatePlanned' },
   { title: 'Фактическая дата доставки', key: 'arrivalDateActual' },
+  { title: 'Статус', key: 'cargoStatus.description' },
   { title: 'Перевозчик', key: 'carrier.name' }, // Access nested property for display
   { title: 'Цена', key: 'serviceFee' }, // TODO это поле нужно??
   { title: 'Стоимость таможни', key: 'customsFee' },
@@ -107,6 +113,14 @@ const getCarriers = async(): Promise<void> => {
   }
 };
 
+const getStatuses = async(): Promise<void> => {
+  try {
+    await cargoStore.fetchStatuses();
+  } catch (error) {
+    console.error('Ошибка загрузки статусов:', error);
+  }
+};
+
 const deleteTruck = async(id: number) => {
   try {
     await truckStore.deleteTruck(id);
@@ -133,7 +147,7 @@ const saveTruck = async(): Promise<void> => {
       if (isEditing.value) {
         await truckStore.updateTruck(payload);
       } else {
-        payload.volumeOccupiedM3 = 0;
+        payload.volumeOccupiedM3 = payload.volumeOccupiedM3;
         payload.volumeAvailableM3 = payload.volumeTotalM3;
         await truckStore.createTruck(payload);
       }
@@ -168,9 +182,9 @@ const editTruck = (id: number): void => {
 const closeTruckModal = (): void => {
   newTruck.value = {
     registrationCountry: '',
-    volumeTotalM3: 0,
-    volumeOccupiedM3: 0,
-    volumeAvailableM3: 0,
+    volumeTotalM3: null,
+    volumeOccupiedM3: null,
+    volumeAvailableM3: null,
     departureWarehouse: '',
     arrivalWarehouse: '',
     driverFullname: '',
@@ -180,12 +194,13 @@ const closeTruckModal = (): void => {
     arrivalDatePlanned: new Date(),
     arrivalDateActual: new Date(),
     carrier: null,
-    serviceFee: 0, // TODO это поле нужно??
-    customsFee: 0,
-    expenses: 0,
-    additionalExpenses: 0,
-    totalAmount: 0,
+    serviceFee: null, // TODO это поле нужно??
+    customsFee: null,
+    expenses: null,
+    additionalExpenses: null,
+    totalAmount: null,
     additionalInformation: '',
+    cargoStatus:"",
     //availableVolume: 0,
   };
   truckDialog.value = false;
@@ -195,8 +210,8 @@ const closeTruckModal = (): void => {
 const openCreateTruckModal = (): void => {
   newTruck.value = {
     registrationCountry: '',
-    volumeTotalM3: 0,
-    volumeOccupiedM3: 0,
+    volumeTotalM3: null,
+    volumeOccupiedM3: null,
     volumeAvailableM3: 0,
     departureWarehouse: '',
     arrivalWarehouse: '',
@@ -207,12 +222,13 @@ const openCreateTruckModal = (): void => {
     arrivalDatePlanned: new Date(),
     arrivalDateActual: new Date(),
     carrier: null,
-    serviceFee: 0, // TODO это поле нужно??
-    customsFee: 0,
-    expenses: 0,
-    additionalExpenses: 0,
-    totalAmount: 0,
+    serviceFee: null, // TODO это поле нужно??
+    customsFee: null,
+    expenses: null,
+    additionalExpenses: null,
+    totalAmount: null,
     additionalInformation: '',
+    cargoStatus: statuses.value.length ? statuses.value[0].value : '',
     //availableVolume: 0,
   };
   isEditing.value = false;
@@ -229,7 +245,7 @@ const canDelete = computed(() => appStore.checkAccess('truck', 'delete'));
 const canCreate = computed(() => appStore.checkAccess('truck', 'create'));
 
 onMounted(async () => {
-  await Promise.all([getTrucks(), getCarriers()]);
+  await Promise.all([getTrucks(), getCarriers(), getStatuses()]);
 });
 </script>
 
@@ -257,7 +273,7 @@ onMounted(async () => {
           ]"
           type="number" required
         />
-        <v-text-field v-model="newTruck.volumeOccupiedM3" label="Объем занятый (м3)" type="number" readonly />
+        <v-text-field v-model="newTruck.volumeOccupiedM3" label="Объем занятый (м3)" type="number" />
         <v-text-field v-model="newTruck.volumeAvailableM3" label="Объем доступный (м3)" type="number" readonly />
         <v-text-field v-model="newTruck.departureWarehouse" label="Склад отправки" :rules="[v => !!v || 'Обязательное поле']" required />
         <v-text-field v-model="newTruck.arrivalWarehouse" label="Склад доставки" :rules="[v => !!v || 'Обязательное поле']" required />
@@ -267,7 +283,13 @@ onMounted(async () => {
         <v-text-field v-model="newTruck.departureDateActual" label="Фактическая дата отправки" type="datetime-local" required />
         <v-text-field v-model="newTruck.arrivalDatePlanned" label="Планируемая дата доставки" type="datetime-local" required />
         <v-text-field v-model="newTruck.arrivalDateActual" label="Фактическая дата доставки" type="datetime-local" required />
-
+        <v-select
+          v-model="newTruck.cargoStatus"
+          :items="statuses"
+          item-title="description"
+          item-value="value"
+          label="Статус"
+        />
         <!-- Carrier Field: Dropdown for Create, Read-only for Edit -->
         <v-select
           v-if="!isEditing"

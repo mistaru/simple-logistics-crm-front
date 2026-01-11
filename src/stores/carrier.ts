@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { useFetchData } from '@/composables/fetchData';
+import { fetchData } from '@/utils';
 
 interface Carrier {
   id?: number;
@@ -7,6 +7,10 @@ interface Carrier {
   email: string;
   phoneNumber: string;
   balance: number;
+
+  totalInvoiceTotal?: number;
+  totalPaymentReceived?: number;
+  totalBalanceDue?: number;
 }
 
 class State {
@@ -28,10 +32,19 @@ export const useCarrierStore = defineStore('carrier', {
       return response;
     },
 
+    async getCarrierById(id: number): Promise<Carrier | null> {
+      const [response, error] = await fetchData(`/carrier/${id}`);
+      if (error) {
+        console.error('Ошибка при получении перевозчика:', error);
+        return null;
+      }
+      return response;
+    },
+
     async createCarrier(carrierData: Carrier): Promise<Carrier | null> {
       const [response, error] = await fetchData('/carrier', {
         method: 'POST',
-        body: JSON.stringify(carrierData),
+        body: carrierData,
       });
 
       if (error) {
@@ -46,7 +59,7 @@ export const useCarrierStore = defineStore('carrier', {
     async updateCarrier(updatedCarrier: Carrier): Promise<Carrier | null> {
       const [response, error] = await fetchData('/carrier', {
         method: 'PUT',
-        body: JSON.stringify(updatedCarrier),
+        body: updatedCarrier,
       });
 
       if (error) {

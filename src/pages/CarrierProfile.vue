@@ -5,6 +5,8 @@ import { useCarrierStore } from '@/stores/carrier';
 import { useTruckStore } from '@/stores/truck';
 import { storeToRefs } from 'pinia';
 
+type Maybe<T> = T | null | undefined;
+
 const route = useRoute();
 const carrierStore = useCarrierStore();
 const truckStore = useTruckStore();
@@ -13,6 +15,13 @@ const { trucks } = storeToRefs(truckStore);
 
 const carrier = ref();
 const loading = ref(false);
+
+// ===== helpers =====
+const toNumber = (v: unknown) => Number((v as Maybe<number>) ?? 0);
+const fmt = (v: unknown) => new Intl.NumberFormat('ru-RU').format(toNumber(v));
+
+// ===== summary cards colors =====
+const debtColor = computed(() => (toNumber(carrier.value?.totalBalanceDue) > 0 ? 'error' : 'success'));
 
 const headers = [
   { title: 'ID', key: 'id' },
@@ -35,15 +44,25 @@ const carrierTrucks = computed(() => {
 const loadData = async () => {
   loading.value = true;
   try {
-    if (carriers.value.length === 0) {
-      await carrierStore.fetchCarriers();
-    }
+    const id = Number(route.params.id);
+
+    // Try to find in store first
+    // let foundCarrier = carriers.value.find(c => c.id === id);
+
+    // If not found or we want fresh data (e.g. for financial stats), fetch from API
+    // if (!foundCarrier) {
+    const foundCarrier = await carrierStore.getCarrierById(id);
+    // } else {
+    //    // Optionally refresh data even if found in list to get latest stats
+    //    const freshData = await carrierStore.getCarrierById(id);
+    //    if (freshData) foundCarrier = freshData;
+    // }
+
+    carrier.value = foundCarrier;
+
     if (trucks.value.length === 0) {
       await truckStore.fetchTrucks();
     }
-
-    const id = Number(route.params.id);
-    carrier.value = carriers.value.find(c => c.id === id);
   } catch (e) {
     console.error('Error loading carrier profile data', e);
   } finally {
@@ -74,6 +93,46 @@ watch(() => route.params.id, loadData);
           Профиль перевозчика: {{ carrier.name }}
         </v-card-title>
         <v-card-text>
+
+          <!-- ✅ 3 фин карточки -->
+          <v-row class="mb-4">
+            <v-col cols="12" md="4">
+              <v-card class="pa-4" color="warning" variant="tonal">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption">Сумма всех грузов</div>
+                    <div class="text-h6">{{ fmt(carrier.totalInvoiceTotal) }}</div>
+                  </div>
+                  <v-icon icon="mdi-truck" size="28" />
+                </div>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="4">
+              <v-card class="pa-4" color="success" variant="tonal">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption">Оплачено</div>
+                    <div class="text-h6">{{ fmt(carrier.totalPaymentReceived) }}</div>
+                  </div>
+                  <v-icon icon="mdi-cash-check" size="28" />
+                </div>
+              </v-card>
+            </v-col>
+
+            <v-col cols="12" md="4">
+              <v-card class="pa-4" :color="debtColor" variant="tonal">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption">Остаток долга</div>
+                    <div class="text-h6">{{ fmt(carrier.totalBalanceDue) }}</div>
+                  </div>
+                  <v-icon icon="mdi-cash-remove" size="28" />
+                </div>
+              </v-card>
+            </v-col>
+          </v-row>
+
           <v-row>
             <v-col cols="12" md="4">
               <v-list-item>

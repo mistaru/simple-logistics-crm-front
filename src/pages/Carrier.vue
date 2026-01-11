@@ -162,7 +162,7 @@ onMounted(getCarriers);
         <v-text-field v-model="newCarrier.name" label="Название" :rules="[v => !!v || 'Обязательное поле']" required/>
         <v-text-field v-model="newCarrier.email" label="Email" />
         <v-text-field v-model="newCarrier.phoneNumber" label="Телефон"/>
-        <v-text-field v-model="newCarrier.balance" label="Баланс" type="number" />
+        <v-text-field v-model="newCarrier.balance" label="Баланс" type="number" readonly/>
       </v-form>
     </CarrierModal>
 
