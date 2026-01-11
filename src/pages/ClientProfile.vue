@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useClientStore } from '@/stores/client';
 import { useCargoStore } from '@/stores/cargo';
 import { storeToRefs } from 'pinia';
-import { useRoute, useRouter } from 'vue-router';
-
-const router = useRouter();
 
 type Maybe<T> = T | null | undefined;
 
@@ -35,14 +33,15 @@ interface ClientProfile {
   email?: string;
   additionalInfo?: string;
 
-  totalInvoiceTotal?: number;
-  totalPaymentReceived?: number;
-  totalBalanceDue?: number;
+  totalInvoiceTotal?: number;      // сумма всех грузов
+  totalPaymentReceived?: number;   // внесено
+  totalBalanceDue?: number;        // осталось должен
 
   cargoProfiles?: CargoProfile[];
 }
 
 const route = useRoute();
+const router = useRouter();
 const clientStore = useClientStore();
 const cargoStore = useCargoStore();
 
@@ -51,10 +50,6 @@ const { clients } = storeToRefs(clientStore) as unknown as { clients: { value: C
 const client = ref<ClientProfile | null>(null);
 const loading = ref(false);
 const error = ref('');
-
-// ===== UI state =====
-const ratePerKgByCargoId = ref<Record<number, string>>({});
-const savingCargoId = ref<number | null>(null);
 
 // ===== helpers =====
 const toNumber = (v: unknown) => Number((v as Maybe<number>) ?? 0);
@@ -67,11 +62,10 @@ const getClientIdFromRoute = (): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const cargosSorted = computed<CargoProfile[]>(() => {
-  const cargos = client.value?.cargoProfiles ?? [];
-  return [...cargos].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
-});
+// ===== summary cards colors =====
+const debtColor = computed(() => (toNumber(client.value?.totalBalanceDue) > 0 ? 'error' : 'success'));
 
+// ===== table =====
 const cargoHeaders: Array<{ title: string; key: string }> = [
   { title: 'ID', key: 'id' },
   { title: 'Вес (кг)', key: 'weight' },
@@ -81,23 +75,51 @@ const cargoHeaders: Array<{ title: string; key: string }> = [
   { title: 'Сумма (в системе)', key: 'invoiceTotal' },
   { title: 'Оплачено', key: 'paymentReceived' },
   { title: 'Долг', key: 'balanceDue' },
-
-  // новые
-  { title: 'Цена за кг', key: 'ratePerKg' },
-  { title: 'Итог (расчёт)', key: 'computedTotal' },
   { title: 'Действия', key: 'actions' },
 ];
 
-const canSetPrice = (cargo: CargoProfile): boolean => {
-  const weight = toNumber(cargo.weight);
-  return weight > 0;
+const cargosSorted = computed<CargoProfile[]>(() => {
+  const cargos = client.value?.cargoProfiles ?? [];
+  return [...cargos].sort((a, b) => (b.id ?? 0) - (a.id ?? 0));
+});
+
+// ===== dialog: edit price =====
+type PriceMode = 'FIXED' | 'PER_KG';
+
+const priceDialog = ref(false);
+const selectedCargo = ref<CargoProfile | null>(null);
+const priceMode = ref<PriceMode>('FIXED');
+
+const fixedPriceInput = ref<string>(''); // итоговая сумма
+const perKgInput = ref<string>('');      // цена за кг
+const saving = ref(false);
+
+const selectedWeight = computed(() => toNumber(selectedCargo.value?.weight));
+const hasWeight = computed(() => selectedWeight.value > 0);
+
+const computedByKgTotal = computed(() => {
+  const rate = toNumber(perKgInput.value);
+  const w = selectedWeight.value;
+  if (rate <= 0 || w <= 0) return 0;
+  // можно округлить до 2 знаков
+  return Number((rate * w).toFixed(2));
+});
+
+const openPriceDialog = (cargo: CargoProfile) => {
+  selectedCargo.value = cargo;
+  priceMode.value = 'FIXED';
+  // по умолчанию подставим текущую сумму, если есть
+  fixedPriceInput.value = cargo.invoiceTotal != null ? String(cargo.invoiceTotal) : '';
+  perKgInput.value = '';
+  priceDialog.value = true;
 };
 
-const calcComputedTotal = (cargo: CargoProfile): number => {
-  const weight = toNumber(cargo.weight);
-  const rate = toNumber(ratePerKgByCargoId.value[cargo.id]);
-  if (weight <= 0 || rate <= 0) return 0;
-  return weight * rate;
+const closePriceDialog = () => {
+  priceDialog.value = false;
+  selectedCargo.value = null;
+  fixedPriceInput.value = '';
+  perKgInput.value = '';
+  priceMode.value = 'FIXED';
 };
 
 const refreshClients = async(): Promise<void> => {
@@ -124,32 +146,51 @@ const loadData = async(): Promise<void> => {
   }
 };
 
-const saveComputedPrice = async(cargo: CargoProfile): Promise<void> => {
-  const weight = toNumber(cargo.weight);
-  if (weight <= 0) {
-    alert('Сначала добавьте кг (вес) в груз');
-    return;
+const savePrice = async(): Promise<void> => {
+  if (!selectedCargo.value) return;
+
+  let finalPrice = 0;
+
+  if (priceMode.value === 'FIXED') {
+    finalPrice = toNumber(fixedPriceInput.value);
+    if (finalPrice <= 0) {
+      alert('Введите сумму (больше 0)');
+      return;
+    }
+  } else {
+    // PER_KG
+    if (!hasWeight.value) {
+      alert('Сначала добавьте кг (вес) в груз');
+      return;
+    }
+    const rate = toNumber(perKgInput.value);
+    if (rate <= 0) {
+      alert('Введите цену за кг (больше 0)');
+      return;
+    }
+    finalPrice = computedByKgTotal.value;
+    if (finalPrice <= 0) {
+      alert('Не удалось рассчитать сумму');
+      return;
+    }
   }
 
-  const total = calcComputedTotal(cargo);
-  if (total <= 0) {
-    alert('Введите цену за кг (больше 0)');
-    return;
-  }
-
-  savingCargoId.value = cargo.id;
+  saving.value = true;
   try {
-    await cargoStore.setCargoPrice(cargo.id, total);
+    // ✅ бэк ждёт JSON body { cargoId, price }
+    await cargoStore.setCargoPrice(selectedCargo.value.id, finalPrice);
 
     await refreshClients();
     const id = getClientIdFromRoute();
     client.value = clients.value.find(c => Number(c.id) === id) ?? null;
+
+    closePriceDialog();
   } catch (e) {
     const message =
         typeof e === 'object' && e !== null && 'message' in e ? String((e as { message: unknown }).message) : 'Ошибка сохранения цены';
     alert(message);
   } finally {
-    savingCargoId.value = null;
+    saving.value = false;
   }
 };
 
@@ -159,7 +200,7 @@ watch(() => route.params.id, loadData);
 
 <template>
   <v-container>
-    <v-btn color="primary" variant="text" class="mb-4" @click="$router.back()">
+    <v-btn color="primary" variant="text" class="mb-4" @click="router.back()">
       <v-icon start>mdi-arrow-left</v-icon>
       Назад
     </v-btn>
@@ -180,29 +221,42 @@ watch(() => route.params.id, loadData);
         </v-card-title>
 
         <v-card-text>
-          <v-row class="mb-2">
+          <!-- ✅ 3 фин карточки -->
+          <v-row class="mb-4">
             <v-col cols="12" md="4">
-              <v-list-item>
-                <template #prepend><v-icon icon="mdi-cash-minus" class="mr-2" /></template>
-                <v-list-item-title>Общий долг</v-list-item-title>
-                <v-list-item-subtitle>{{ fmt(client.totalInvoiceTotal) }}</v-list-item-subtitle>
-              </v-list-item>
+              <v-card class="pa-4" color="warning" variant="tonal">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption">Сумма всех грузов</div>
+                    <div class="text-h6">{{ fmt(client.totalInvoiceTotal) }}</div>
+                  </div>
+                  <v-icon icon="mdi-truck" size="28" />
+                </div>
+              </v-card>
             </v-col>
 
             <v-col cols="12" md="4">
-              <v-list-item>
-                <template #prepend><v-icon icon="mdi-cash-check" class="mr-2" /></template>
-                <v-list-item-title>Внесено</v-list-item-title>
-                <v-list-item-subtitle>{{ fmt(client.totalPaymentReceived) }}</v-list-item-subtitle>
-              </v-list-item>
+              <v-card class="pa-4" color="success" variant="tonal">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption">Внесено</div>
+                    <div class="text-h6">{{ fmt(client.totalPaymentReceived) }}</div>
+                  </div>
+                  <v-icon icon="mdi-cash-check" size="28" />
+                </div>
+              </v-card>
             </v-col>
 
             <v-col cols="12" md="4">
-              <v-list-item>
-                <template #prepend><v-icon icon="mdi-wallet" class="mr-2" /></template>
-                <v-list-item-title>Баланс</v-list-item-title>
-                <v-list-item-subtitle>{{ fmt(client.totalBalanceDue) }}</v-list-item-subtitle>
-              </v-list-item>
+              <v-card class="pa-4" :color="debtColor" variant="tonal">
+                <div class="d-flex align-center justify-space-between">
+                  <div>
+                    <div class="text-caption">Осталось должен</div>
+                    <div class="text-h6">{{ fmt(client.totalBalanceDue) }}</div>
+                  </div>
+                  <v-icon icon="mdi-cash-remove" size="28" />
+                </div>
+              </v-card>
             </v-col>
           </v-row>
 
@@ -223,11 +277,7 @@ watch(() => route.params.id, loadData);
       <v-card>
         <v-card-title>Грузы</v-card-title>
 
-        <v-data-table
-            :headers="cargoHeaders"
-            :items="cargosSorted"
-            item-value="id"
-        >
+        <v-data-table :headers="cargoHeaders" :items="cargosSorted" item-value="id">
           <template #item.status="{ item }">
             {{ item.status?.description ?? item.status?.value ?? '' }}
           </template>
@@ -236,43 +286,86 @@ watch(() => route.params.id, loadData);
           <template #item.paymentReceived="{ item }">{{ fmt(item.paymentReceived) }}</template>
           <template #item.balanceDue="{ item }">{{ fmt(item.balanceDue) }}</template>
 
-          <!-- ✅ Цена за кг -->
-          <template #item.ratePerKg="{ item }">
-            <div v-if="!canSetPrice(item)" class="text-caption text-red">
-              Сначала добавьте кг в груз
-            </div>
-
-            <v-text-field
-                v-else
-                v-model="ratePerKgByCargoId[item.id]"
-                type="number"
-                density="compact"
-                hide-details
-                placeholder="например 35"
-            />
-          </template>
-
-          <!-- ✅ Итог (front calc) -->
-          <template #item.computedTotal="{ item }">
-            <span v-if="!canSetPrice(item)">—</span>
-            <span v-else>
-              {{ fmt(calcComputedTotal(item)) }}
-            </span>
-          </template>
-
-          <!-- ✅ Сохранение -->
           <template #item.actions="{ item }">
-            <v-btn
-                color="primary"
-                size="small"
-                :disabled="!canSetPrice(item) || calcComputedTotal(item) <= 0 || savingCargoId === item.id"
-                @click="saveComputedPrice(item)"
-            >
-              {{ savingCargoId === item.id ? 'Сохранение...' : 'Сохранить' }}
+            <v-btn color="primary" size="small" @click="openPriceDialog(item)">
+              Ввести новую цену
             </v-btn>
           </template>
         </v-data-table>
       </v-card>
+
+      <!-- Dialog -->
+      <v-dialog v-model="priceDialog" max-width="560">
+        <v-card>
+          <v-card-title class="text-h6">
+            Изменить цену груза
+          </v-card-title>
+
+          <v-card-text v-if="selectedCargo">
+            <div class="mb-2"><b>Груз ID:</b> {{ selectedCargo.id }}</div>
+            <div class="mb-4"><b>Вес:</b> {{ fmt(selectedCargo.weight) }} кг</div>
+
+            <v-radio-group v-model="priceMode" inline>
+              <v-radio label="Задать сумму" value="FIXED" />
+              <v-radio label="Рассчитать по кг" value="PER_KG" />
+            </v-radio-group>
+
+            <!-- FIXED -->
+            <div v-if="priceMode === 'FIXED'" class="mt-3">
+              <v-text-field
+                  v-model="fixedPriceInput"
+                  type="number"
+                  label="Сумма"
+                  placeholder="например 15000"
+                  hide-details="auto"
+              />
+            </div>
+
+            <!-- PER KG -->
+            <div v-else class="mt-3">
+              <v-alert v-if="!hasWeight" type="warning" variant="tonal" class="mb-3">
+                Сначала добавьте кг (вес) в груз, затем можно рассчитать цену по кг.
+              </v-alert>
+
+              <v-text-field
+                  v-model="perKgInput"
+                  type="number"
+                  label="Цена за кг"
+                  placeholder="например 35"
+                  hide-details="auto"
+                  :disabled="!hasWeight"
+              />
+
+              <v-divider class="my-4" />
+
+              <div class="d-flex justify-space-between">
+                <div class="text-subtitle-2">Итоговая сумма:</div>
+                <div class="text-h6">{{ fmt(computedByKgTotal) }}</div>
+              </div>
+              <div class="text-caption mt-1">
+                Итог = вес × цена_за_кг
+              </div>
+            </div>
+          </v-card-text>
+
+          <v-card-actions class="justify-end">
+            <v-btn variant="text" @click="closePriceDialog">Отмена</v-btn>
+
+            <v-btn
+                color="primary"
+                :disabled="
+                saving ||
+                !selectedCargo ||
+                (priceMode === 'FIXED' && toNumber(fixedPriceInput) <= 0) ||
+                (priceMode === 'PER_KG' && (!hasWeight || toNumber(perKgInput) <= 0 || computedByKgTotal <= 0))
+              "
+                @click="savePrice"
+            >
+              {{ saving ? 'Сохранение...' : 'Сохранить' }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </template>
 
     <v-alert v-else type="error" class="mt-4">
