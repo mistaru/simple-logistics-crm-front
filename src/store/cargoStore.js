@@ -48,5 +48,20 @@ export const useCargoStore = defineStore('cargo', {
         await this.fetchCargos();
       }
     },
+
+    async setCargoPrice(cargoId, price) {
+      const { fetchData } = useFetchData();
+
+      const [, error] = await fetchData(
+        '/cargo/price',
+        'post',
+        null,
+        { cargoId, price } // уйдет как query params
+      );
+      if (error) {
+        throw error;
+      }
+    },
+
   },
 });

@@ -41,7 +41,9 @@ const headers = [
   { title: 'Whatsapp', key: 'whatsappNumber' },
   { title: 'Email', key: 'email' },
   { title: 'Доп. информация', key: 'additionalInfo' },
-  { title: 'Действия', key: 'actions' }
+  { title: 'Баланс', key: 'totalBalanceDue' },
+  { title: 'Профиль', key: 'profile', sortable: false },
+  { title: 'Действия', key: 'actions', sortable: false },
 ];
 
 const getClients = async(): Promise<void> => {
@@ -77,6 +79,10 @@ const deleteClient = async(id: number): Promise<void> => {
   } catch (error) {
     console.error('Ошибка удаления клиента:', error);
   }
+};
+
+const viewClientProfile = (id: number): void => {
+  router.push({ name: 'ClientProfile', params: { id } });
 };
 
 const editClient = (id: number): void => {
@@ -149,6 +155,11 @@ onMounted(getClients);
       </v-card-title>
 
       <v-data-table :headers="headers" :items="clients" :loading="loading" item-value="id">
+        <template #item.profile="{ item }">
+          <v-btn color="info" size="small" class="mr-2" @click="viewClientProfile(item.id)">
+            Профиль
+          </v-btn>
+        </template>
         <template #item.actions="{ item }">
           <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editClient(item.id)">
             Редактировать

@@ -44,6 +44,24 @@ export const useCargoStore = defineStore('cargo', {
     clients: [],
   }),
   actions: {
+    async setCargoPrice(cargoId: number, price: number): Promise<boolean> {
+      const query = new URLSearchParams({
+        cargoId: String(cargoId),
+        price: String(price),
+      }).toString();
+
+      const [, error] = await fetchData(`/cargo/price?${query}`, {
+        method: 'POST',
+        body: '{}', // ✅ body обязателен по типам fetchData
+      });
+
+      if (error) {
+        console.error('Ошибка при сохранении цены груза:', error);
+        throw error;
+      }
+      return true;
+    },
+
     async fetchCargos() {
       const [response, error] = await fetchData('/cargo');
       if (error) {
