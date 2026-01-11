@@ -3,11 +3,13 @@ import { computed, onMounted, ref } from 'vue';
 import { useClientStore } from '@/stores/client';
 import { useAppStore } from '@/stores/app';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 import ModalDialog from '@/components/ClientModal.vue';
 import Rules from '@/utils/rules';
 
 const clientStore = useClientStore();
 const appStore = useAppStore();
+const router = useRouter();
 
 const { clients } = storeToRefs(clientStore);
 const loading = ref(false);
@@ -41,7 +43,9 @@ const headers = [
   { title: 'Whatsapp', key: 'whatsappNumber' },
   { title: 'Email', key: 'email' },
   { title: 'Доп. информация', key: 'additionalInfo' },
-  { title: 'Действия', key: 'actions' }
+  { title: 'Баланс', key: 'totalBalanceDue' },
+  { title: 'Профиль', key: 'profile', sortable: false },
+  { title: 'Действия', key: 'actions', sortable: false },
 ];
 
 const getClients = async(): Promise<void> => {
@@ -53,6 +57,10 @@ const getClients = async(): Promise<void> => {
   } finally {
     loading.value = false;
   }
+};
+
+const viewCarrier = (id: number): void => {
+  router.push({ name: 'CarrierProfile', params: { id } });
 };
 
 const saveClient = async(): Promise<void> => {
@@ -149,6 +157,13 @@ onMounted(getClients);
       </v-card-title>
 
       <v-data-table :headers="headers" :items="clients" :loading="loading" item-value="id">
+
+        <template #item.profile="{ item }">
+          <v-btn color="info" size="small" class="mr-2" @click="viewClientProfile(item.id)">
+            Профиль
+          </v-btn>
+        </template>
+
         <template #item.actions="{ item }">
           <v-btn v-if="canUpdate" color="blue" size="small" class="ma-2" @click="editClient(item.id)">
             Редактировать
