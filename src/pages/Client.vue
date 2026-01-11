@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useClientStore } from '@/stores/client';
 import { useAppStore } from '@/stores/app';
 import { storeToRefs } from 'pinia';
 import ModalDialog from '@/components/ClientModal.vue';
 import Rules from '@/utils/rules';
 
+const router = useRouter();
 const clientStore = useClientStore();
 const appStore = useAppStore();
 
