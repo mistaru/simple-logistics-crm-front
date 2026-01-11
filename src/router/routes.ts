@@ -38,11 +38,6 @@ const staticRoutes: RouteRecordRaw[] = [
     component: () => import('@/pages/Client.vue'),
   },
   {
-    path: '/client/:id',
-    name: 'ClientProfile',
-    component: () => import('@/pages/ClientProfile.vue'),
-  },
-  {
     path: '/warehouse',
     name: 'Warehouse',
     component: () => import('@/pages/Warehouse.vue'),

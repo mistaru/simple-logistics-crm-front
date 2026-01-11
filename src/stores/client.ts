@@ -28,7 +28,7 @@ export const useClientStore = defineStore('client', {
         console.error('Ошибка при загрузке клиентов:', error);
         return [];
       }
-      this.clients = response.sort((a: any, b: any) => (a.id ?? 0) - (b.id ?? 0));
+      this.clients = response.sort((a: Client, b: Client) => a.id - b.id);
       return response;
     },
 
