@@ -59,7 +59,7 @@ const getClients = async(): Promise<void> => {
   }
 };
 
-const viewCarrier = (id: number): void => {
+const viewClientProfile = (id: number): void => {
   router.push({ name: 'CarrierProfile', params: { id } });
 };
 
