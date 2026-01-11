@@ -49,16 +49,19 @@ export const useCargoStore = defineStore('cargo', {
       }
     },
 
-    async setCargoPrice(cargoId, price) {
-      const { fetchData } = useFetchData();
+    async setCargoPrice(cargoId: number, price: number): Promise<void> {
+      const payload = {
+        cargoId, // Long
+        price,   // BigDecimal
+      };
 
-      const [, error] = await fetchData(
-        '/cargo/price',
-        'post',
-        null,
-        { cargoId, price } // уйдет как query params
-      );
+      const [, error] = await fetchData('/cargo/price', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
       if (error) {
+        console.error('Ошибка при сохранении цены груза:', error);
         throw error;
       }
     },

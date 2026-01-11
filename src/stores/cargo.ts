@@ -45,14 +45,14 @@ export const useCargoStore = defineStore('cargo', {
   }),
   actions: {
     async setCargoPrice(cargoId: number, price: number): Promise<boolean> {
-      const query = new URLSearchParams({
-        cargoId: String(cargoId),
-        price: String(price),
-      }).toString();
+      const payload = {
+        cargoId, // Long
+        price,   // BigDecimal
+      };
 
-      const [, error] = await fetchData(`/cargo/price?${query}`, {
+      const [, error] = await fetchData('/cargo/price', {
         method: 'POST',
-        body: '{}', // ✅ body обязателен по типам fetchData
+        body: JSON.stringify(payload), // ✅ бэк ждёт @RequestBody
       });
 
       if (error) {
