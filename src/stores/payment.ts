@@ -7,25 +7,31 @@ const appStore = useAppStore();
 interface Payment {
   id?: number;
   actual?: string;
-  planned?: string;
-  status: string;
+  payer_id: number;
   comment?: string;
+  type: 'CLIENT_PAYS_FOR_CARGO' | 'COMPANY_PAYS_CARRIERS';
+
 }
 
-interface PaymentStatus {
-  value: string;
-  description: string;
+interface CargoId{
+  id?: number;
+}
+
+interface TruckId{
+  id?: number;
 }
 
 class State {
   payments: Payment[] = [];
-  statuses: PaymentStatus[] = [];
+  cargoIds: CargoId[] = [];
+  truckIds: TruckId[] = [];
 }
 
 export const usePaymentStore = defineStore('payment', {
   state: (): State => ({
     payments: [],
-    statuses: [],
+    cargoIds: [],
+    truckIds: [],
   }),
   actions: {
     async fetchPayments() {
@@ -38,24 +44,49 @@ export const usePaymentStore = defineStore('payment', {
       return response;
     },
 
-    async fetchStatuses() {
-      const [response, error] = await fetchData('/enums/paymentStatuses');
+    async fetchCargoIds() {
+      const [response, error] = await fetchData('/cargo/ids');
       if (error) {
-        console.error('Ошибка при загрузке статусов:', error);
+        console.error('Ошибка при загрузке грузов:', error);
         return [];
       }
-      this.statuses = response.sort((a: PaymentStatus, b: PaymentStatus) => a.id - b.id);
+      this.cargoIds = response.sort((a: CargoId, b: CargoId) => a.id - b.id);
+      return response;
+    },
+
+    async fetchTruckIds() {
+      const [response, error] = await fetchData('/truck/ids');
+      if (error) {
+        console.error('Ошибка при загрузке фур:', error);
+        return [];
+      }
+      this.truckIds = response.sort((a: TruckId, b: TruckId) => a.id - b.id);
       return response;
     },
 
     async createPayment(paymentData: Payment): Promise<Payment | null> {
-      const [response, error] = await fetchData('/payment', {
+      const [response, error] = await fetchData('/payment/cargo', {
         method: 'POST',
         body: JSON.stringify(paymentData),
       });
 
       if (error) {
-        console.error('Ошибка добавления платежа:', error);
+        console.error('Ошибка добавления платежа клиентом:', error);
+        return null;
+      }
+
+      this.payments.push(response);
+      return response;
+    },
+
+    async createPaymentTruck(paymentData: Payment): Promise<Payment | null> {
+      const [response, error] = await fetchData('/payment/truck', {
+        method: 'POST',
+        body: JSON.stringify(paymentData),
+      });
+
+      if (error) {
+        console.error('Ошибка добавления платежа перевозчику:', error);
         return null;
       }
 
@@ -64,13 +95,19 @@ export const usePaymentStore = defineStore('payment', {
     },
 
     async updatePayment(paymentUpdate: Payment): Promise<Payment | null> {
+
+      const payload = {
+        ...paymentUpdate,
+        status: paymentUpdate.status?.value ?? null,
+      };
+
       const [response, error] = await fetchData('/payment', {
         method: 'PUT',
-        body: JSON.stringify(paymentUpdate),
+        body: JSON.stringify(payload),
       });
 
       if (error) {
-        console.error('Ошибка при обновлении платежа:', error);
+        console.error('Ошибка при обновлении платежа перевозчику:', error);
         return null;
       }
 
