@@ -55,7 +55,7 @@ export const usePaymentStore = defineStore('payment', {
     },
 
     async fetchTruckIds() {
-      const [response, error] = await fetchData('/truck/ids');
+      const [response, error] = await fetchData('/carrier/ids');
       if (error) {
         console.error('Ошибка при загрузке фур:', error);
         return [];

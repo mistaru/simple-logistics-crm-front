@@ -276,20 +276,22 @@ onMounted(async() => {
 
     <v-card>
       <v-card-title class="d-flex align-center justify-space-between">
-        Список платежей
         <v-btn
           v-if="canCreate"
-          color="primary"
+          color="green-darken-1"
+          variant="elevated"
           @click="openCreatePaymentModal"
         >
-          Добавить платёж клиента
+          Платёж от клиента
         </v-btn>
+
         <v-btn
           v-if="canCreateTruck"
-          color="primary"
+          color="orange-darken-1"
+          variant="elevated"
           @click="openCreatePaymentModalTruck"
         >
-          Добавить платёж перевозчика
+          Платёж перевозчику
         </v-btn>
       </v-card-title>
 
