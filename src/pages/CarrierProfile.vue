@@ -32,6 +32,7 @@ const headers = [
   { title: 'Склад доставки', key: 'arrivalWarehouse' },
   { title: 'Планируемая дата отправки', key: 'departureDatePlanned' },
   { title: 'Планируемая дата доставки', key: 'arrivalDatePlanned' },
+  { title: 'Цена', key: 'serviceFee' },
   { title: 'Общая сумма', key: 'totalAmount' },
 ];
 

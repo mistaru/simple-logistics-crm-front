@@ -63,17 +63,19 @@ const deleteCarrier = async(id: number) => {
 
 const saveCarrier = async(): Promise<void> => {
   try {
-    const payload = {
-      ...newCarrier.value,
-    };
-    if (isEditing.value) {
-      await carrierStore.updateCarrier(payload);
-    } else {
-      await carrierStore.createCarrier(payload);
+>    const isValid = await saveCarrierRef.value?.validate();
+    if (isValid?.valid) {
+      const payload = {
+        ...newCarrier.value,
+      };
+      if (isEditing.value) {
+        await carrierStore.updateCarrier(payload);
+      } else {
+        await carrierStore.createCarrier(payload);
+      }
+      closeCarrierModal();
+      await getCarriers();
     }
-    closeCarrierModal();
-    await getCarriers();
-    // }
   } catch (error) {
     console.error('Ошибка сохранения перевозчика:', error);
   }
@@ -160,9 +162,9 @@ onMounted(getCarriers);
     >
       <v-form ref="saveCarrierRef">
         <v-text-field v-model="newCarrier.name" label="Название" :rules="[v => !!v || 'Обязательное поле']" required/>
-        <v-text-field v-model="newCarrier.email" label="Email" />
-        <v-text-field v-model="newCarrier.phoneNumber" label="Телефон"/>
-        <v-text-field v-model="newCarrier.balance" label="Баланс" type="number" readonly/>
+        <v-text-field v-model="newCarrier.email" label="Email" :rules="[v => !!v || 'Обязательное поле']" required/>
+        <v-text-field v-model="newCarrier.phoneNumber" label="Телефон" :rules="[v => !!v || 'Обязательное поле']" required/>
+        <!--<v-text-field v-model="newCarrier.balance" label="Баланс" type="number" readonly/>-->
       </v-form>
     </CarrierModal>
 
